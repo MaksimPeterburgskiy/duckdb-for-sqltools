@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -34,13 +34,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22
           cache: pnpm
@@ -74,13 +76,15 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 22
           cache: pnpm
@@ -100,9 +104,28 @@ jobs:
           fi
 
       - name: Upload tested VSIX
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: sqltools-duckdb-driver-vsix
-          path: "*.vsix"
+          name: duckdb-for-sqltools-vsix-${{ github.sha }}
+          path: "duckdb-for-sqltools-*.vsix"
           if-no-files-found: error
           archive: false
+
+  gate:
+    name: CI gate
+    if: always()
+    needs: [verify, package]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      VERIFY_RESULT: ${{ needs.verify.result }}
+      PACKAGE_RESULT: ${{ needs.package.result }}
+    steps:
+      - name: Require successful verification and packaging
+        shell: bash
+        run: |
+          if [[ "$VERIFY_RESULT" != "success" || "$PACKAGE_RESULT" != "success" ]]; then
+            echo "Verification result: $VERIFY_RESULT"
+            echo "Packaging result: $PACKAGE_RESULT"
+            exit 1
+          fi

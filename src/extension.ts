@@ -8,6 +8,11 @@ import {
   parseBeforeSaveConnection,
   resolveConnectionPaths,
 } from './connection-parser';
+import {
+  CONFLICTING_DUCKDB_EXTENSION_ID,
+  DUCKDB_EXTENSION_CONFLICT_MESSAGE,
+  hasConflictingDuckDBExtension,
+} from './extension-conflict';
 const { publisher, name, displayName } = require('../package.json');
 
 const AUTHENTICATION_PROVIDER = 'sqltools-driver-credentials';
@@ -23,6 +28,20 @@ function getWorkspaceContext() {
 }
 
 export async function activate(extContext: ExtensionContext): Promise<IDriverExtensionApi> {
+  if (hasConflictingDuckDBExtension(extensionId => vscode.extensions.getExtension(extensionId))) {
+    const action = await vscode.window.showErrorMessage(
+      DUCKDB_EXTENSION_CONFLICT_MESSAGE,
+      'Show Evidence extension',
+    );
+    if (action) {
+      await vscode.commands.executeCommand(
+        'workbench.extensions.search',
+        `@id:${CONFLICTING_DUCKDB_EXTENSION_ID}`,
+      );
+    }
+    throw new Error(DUCKDB_EXTENSION_CONFLICT_MESSAGE);
+  }
+
   const sqltools = vscode.extensions.getExtension<IExtension>('mtxr.sqltools');
   if (!sqltools) {
     throw new Error('SQLTools not installed');

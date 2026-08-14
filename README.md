@@ -1,14 +1,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# DuckDB driver for SQLTools
+# DuckDB for SQLTools
 
 Run queries and browse [DuckDB](https://duckdb.org/) databases from [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) in VS Code.
 
-Version 2.0 uses DuckDB 1.5.5 through `@duckdb/node-api@1.5.5-r.4`, DuckDB's current Node client. The extension requires VS Code 1.87 or newer and installs the matching native DuckDB package for the SQLTools host platform.
+This is an independent fork of the [DuckDB driver originally maintained by Evidence](https://github.com/evidence-dev/sqltools-duckdb-driver). It uses DuckDB 1.5.5 through `@duckdb/node-api@1.5.5-r.4`. The extension requires VS Code 1.87 or newer and installs the matching native DuckDB package for the SQLTools host platform.
 
 ## Install
 
-Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), then install the [DuckDB driver](https://marketplace.visualstudio.com/items?itemName=Evidence.sqltools-duckdb-driver). Open the SQLTools sidebar and choose **Add New Connection**, then select **DuckDB**.
+Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), then download the VSIX from the [latest GitHub release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest). Install it from VS Code with **Extensions: Install from VSIX...**, or from a terminal:
+
+```sh
+code --install-extension duckdb-for-sqltools-<version>.vsix
+```
+
+The Evidence extension and DuckDB for SQLTools both register the SQLTools `DuckDB` driver. Disable the Evidence extension in the same VS Code profile before enabling this one. Existing SQLTools connections that use the `DuckDB` driver continue to work.
+
+Open the SQLTools sidebar, choose **Add New Connection**, then select **DuckDB**.
 
 ## Features
 
@@ -107,4 +115,4 @@ pnpm compile
 pnpm package
 ```
 
-Publishing remains manual. CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact.
+CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers publish tested artifacts through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md).
