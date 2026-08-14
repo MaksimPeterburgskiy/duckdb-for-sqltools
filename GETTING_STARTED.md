@@ -1,89 +1,93 @@
-# SQLTools Driver Template Repository
+# Developing the SQLTools DuckDB driver
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y487W9)
-[![Patreon](https://img.shields.io/badge/patreon-support-blue.svg?style=for-the-badge)](https://www.patreon.com/mteixeira)
-[![Paypal Donate](https://img.shields.io/badge/paypal-donate-blue.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RSMB6DGK238V8)
-[![VSCode.pro](https://img.shields.io/badge/Supported%20by-VSCode%20Power%20User%20Course%20%E2%86%92-gray.svg?colorA=655BE1&colorB=4F44D6&style=for-the-badge)](https://a.paddle.com/v2/click/16413/111711?link=1227)
+This extension has two entry points. `src/extension.ts` runs in the VS Code extension host and registers the driver with SQLTools. `src/ls/plugin.ts` runs in the SQLTools language-server process and loads the DuckDB driver.
 
-## Getting started with you new driver
+DuckDB is a native dependency. SQLTools installs the exact `@duckdb/node-api` version declared by the driver into its own dependency directory, using the language-server runtime and machine architecture. Keep the development dependency and the driver's dynamic dependency declaration on the same exact version.
 
-Welcome, developer!
+## Requirements
 
-Let's get started with your new driver. I'm assuming you already know how to start extensions on VSCode.
-In case you dont', please take a look at https://code.visualstudio.com/api/get-started/your-first-extension before moving forward.
+- VS Code 1.87 or newer
+- Node.js 22
+- Corepack and the pnpm version declared in `package.json`
+- SQLTools installed in the VS Code profile used for extension debugging
 
-### 1. Set name, id and description of your driver
+## Install
 
-In the very beginning let's get this child a name. There are a few places you are required to change, and others are up to you to decide.
-
-- Required changes
-
-  - `package.json`, you need to set a this properties as you like to make you package look good on VSCode Marketplace.
-    These are the bare bones of the extension.
-
-  ```
-  "name": "driver-template",
-  "displayName": "Driver Template",
-  "publisher": "mtxr",
-  ```
-
-- Optional changes
-  - `src/contants.ts`, you can use different values here if you want
-  - `src/extension.ts`, this is where your driver is bootstraped and attached to SQLTools. You can customize as needed.
-
-You can now go to your terminal emulator and start the extension compiling process with:
-
-```
-yarn run watch # or npm run watch
+```sh
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-For an overview on how to create VScode extensions, refer to VSCode guide at [](https://code.visualstudio.com/api/get-started/your-first-extension).
+Use `pnpm install` without `--frozen-lockfile` only when intentionally changing dependencies and regenerating `pnpm-lock.yaml`. Do not check in a Yarn or npm lockfile.
 
-### 2. Tell SQLTools how to query with you driver
+## Common commands
 
-Now we will be updating `src/ls/driver.ts` and `src/ls/queries.ts`. Here is where the magic happens.
+```sh
+pnpm clean
+pnpm typecheck
+pnpm test
+pnpm test:integration
+pnpm compile
+pnpm watch
+pnpm package
+```
 
-`src/ls/driver.ts` is where we do the code to query the desired database, for example, where you would be using `node-pg` to
-guide SQLTools to get Postgres results. Please take a look in the file, there are further comments there.
+`pnpm test` runs the unit suite. `pnpm test:integration` opens real DuckDB memory and file databases and exercises the native Node API. `pnpm package` compiles the extension before creating a VSIX.
 
-`src/ls/queries.ts` is the file where your base queries are stored. This file is not required, but having those queries split from `driver.ts`
-help us to keep the code organized.
+Run every check used by CI before submitting a change:
 
-Check those files and try to update accortdingly to your needs.
+```sh
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
+pnpm test:integration
+pnpm compile
+pnpm package
+```
 
-### 3. Creating connection schema for the assistant
+## Debug in VS Code
 
-We are using `@rjsf/core` to render the forms, so in order to add you driver to the connection assistant,
-edit `connection.schema.json` and `ui.schema.json`.
+Open the repository in VS Code and run the **Run Driver Extension** launch configuration. Its pre-launch task runs `pnpm compile`. Use the **pnpm: watch** task when you want the bundles rebuilt after each source change.
 
-See https://react-jsonschema-form.readthedocs.io/en/latest/ for more instructions.
+The Extension Development Host needs SQLTools. Add a DuckDB connection there and inspect the **SQLTools** output channel for driver logs. The launch configuration sets `SQLTOOLS_DEBUG_PORT_LS=6099` for language-server debugging.
 
-### 4. Create icons
+## Code map
 
-You should create three icons for your extension to show up correctly on SQLTools with this requirements:
+- `src/extension.ts`: SQLTools registration, connection migration, workspace path conversion, and credential resolution
+- `src/ls/driver.ts`: SQLTools driver contract, `DuckDBInstance` and `DuckDBConnection` lifecycle, result conversion, explorer mapping, completion, and definitions
+- `src/ls/queries.ts`: metadata queries and fully qualified generated SQL
+- `connection.schema.json` and `ui.schema.json`: SQLTools Connection Assistant fields
+- `test/`: unit and native integration coverage
 
-- Must be PNG Images
-- Size 64x64px
-- Have no margins and no paddings
-- Connection state icons:
-  - Connected but not active: 64x64px PNG image, opacity set to 100%. See `icons/default.png`
-  - Connected and active: 64x64px PNG image, opacity set to 100%, have a green (#00FF00) circle 24x24 bottom right. See `icons/active.png`
-  - Diconnected/Inactive icon: Same icon as default state, but with 50% opacity. See `icons/inactive.png`
-- Put your icons at `icons/` directory
-- Ensure your icons are correctly mapped on `src/extension.ts`
+Keep identifier handling separate from value handling. Generated relation names must quote the catalog, schema, and object independently. Metadata predicate values should use parameters where the SQLTools call path permits them. Never build an identifier from an explorer label alone.
 
-### 5. Edit README.md
+## Test expectations
 
-Add instructions for your users about this driver usage, how to get started, how to setup, require etc.
+Changes to connection or query code should cover the relevant cases below:
 
-### 6. Publish the driver
+- repeated and concurrent open/close calls
+- connection-before-instance shutdown and reuse of a closed database file
+- read-only rejection and writable in-memory databases
+- multiple schemas and attached catalogs with duplicate object names
+- tables, views, temporary objects, indexes, constraints, sequences, macros, and custom types
+- names containing spaces, dots, SQL keywords, Unicode, single quotes, and double quotes
+- empty and duplicate-name result columns
+- `test_all_types()` values, especially BIGINT, HUGEINT, DECIMAL, BLOB, temporal, LIST, ARRAY, STRUCT, MAP, UNION, ENUM, UUID, BIT, and VARIANT values
 
-Time to publish your driver!
+CI runs these checks on Ubuntu x64, Ubuntu arm64, Windows x64, and macOS arm64. The Apple Silicon job must load the published native binding without compiling DuckDB from source.
 
-Please refer to https://code.visualstudio.com/api/working-with-extensions/publishing-extension for detailed instructions.
+## Connection changes
 
-After publishing, open a PR in https://github.com/mtxr/vscode-sqltools to add you driver to the list of supported drivers!
+The canonical saved target is `database`. Keep reading `databaseFilePath` so connections from pre-2.0 releases continue to work. Do not persist a MotherDuck token in a database URI. Use the SQLTools credential resolver or ask for the token when connecting.
 
-You can delete this file now!
+DuckDB options that restrict extensions or external access must be applied while creating the instance. Security settings cannot always be loosened after the instance starts. Tests that share the same cached database path must therefore use compatible instance options or close the prior instance first.
 
-All set! Yay!
+The driver uses `sql_auto_complete()` only when the official `autocomplete` extension is already loaded, for example by trusted `initializationSql`. Merely requesting SQLTools completions never installs or loads that extension.
+
+## Packaging and release
+
+`pnpm package` creates a VSIX without bundling a host-specific DuckDB binary. CI uploads the VSIX produced by the Ubuntu x64 job after all checks in that job pass. Publishing to the VS Code Marketplace and Open VSX remains a manual step; this repository has no workflow that publishes artifacts.
+
+Before a 2.0 release, install the CI artifact on each supported platform, connect SQLTools to a temporary database, run `SELECT 1`, browse a table and view, disconnect, and confirm the file can be reopened by another process.
+
+See the [VS Code extension publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) and the [SQLTools driver source](https://github.com/mtxr/vscode-sqltools) for the host contracts.

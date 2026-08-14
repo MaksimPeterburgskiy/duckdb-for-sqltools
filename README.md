@@ -1,90 +1,110 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# <img src="https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/icons/default.png?raw=true"  style="height:1em;"/> VS Code SQLTools for DuckDB 
+# DuckDB driver for SQLTools
 
-Query and explore [DuckDB](https://duckdb.org/) databases in VSCode.
+Run queries and browse [DuckDB](https://duckdb.org/) databases from [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) in VS Code.
 
-## Latest DuckDB Support: v1.3.2
-
-A VSCode extension that extends [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), with a driver for DuckDB.
-
-This driver is maintained by [Evidence](https://evidence.dev): Publish BI reports with just SQL and Markdown.
+Version 2.0 uses DuckDB 1.5.5 through `@duckdb/node-api@1.5.5-r.4`, DuckDB's current Node client. The extension requires VS Code 1.87 or newer and installs the matching native DuckDB package for the SQLTools host platform.
 
 ## Install
 
-Install from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=Evidence.sqltools-duckdb-driver).
+Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), then install the [DuckDB driver](https://marketplace.visualstudio.com/items?itemName=Evidence.sqltools-duckdb-driver). Open the SQLTools sidebar and choose **Add New Connection**, then select **DuckDB**.
 
 ## Features
 
-- Latest DuckDB support (currently 1.3.2)
-- **Connect** to a local, in-memory or MotherDuck (via service token) DuckDB instance
-- **Run queries** against a DuckDB instance
-- **Explore DB** tables and columns in the sidebar
-- **View** table results by selecting them in the sidebar
-- **Autocomplete** for common keywords (e.g. SELECT, FROM, WHERE) and table names
-- **Read/Write** connections
+- Local file, in-memory, MotherDuck, and advanced URI connections
+- Automatic, read-only, and read/write access modes
+- Multiple statements with one SQLTools result per statement
+- Lossless display of DuckDB integers, decimals, temporal values, blobs, and nested types
+- Catalog-aware explorer for attached databases, schemas, tables, views, columns, constraints, indexes, sequences, types, functions, and macros
+- Fully qualified previews, counts, definitions, and INSERT snippets
+- DuckDB keyword completion and catalog-aware table and column completion
+- Context-aware `sql_auto_complete()` suggestions when trusted initialization SQL has already loaded DuckDB's official `autocomplete` extension
+- Workspace-relative paths for database files inside the current VS Code workspace
+- Optional connection settings and initialization SQL
 
-### Connect Local and In-Memory DBs
+The explorer uses `information_schema` for its portable catalog, schema, table, view, and column data. DuckDB metadata functions provide details that the information schema does not expose, including database access state, constraint expressions, indexes, sequences, macros, and user-defined types. Object names are kept as separate catalog, schema, and object parts, so names with spaces, dots, quotes, Unicode, or SQL keywords work correctly.
 
-![Connect Local DB](https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/connect-local-db.gif?raw=true)
+## Connection targets
 
-![Connect In-Memory DB](https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/connect-in-memory-db.gif?raw=true)
-### Run Query
+The connection assistant offers four modes:
 
-![Run Query](https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/run-query.gif?raw=true)
+- **Local File** opens a `.duckdb` file. Files inside a VS Code workspace are stored as workspace-relative paths so the connection can move with the project.
+- **In-Memory** opens a temporary `:memory:` database. In-memory connections are always writable and disappear when disconnected.
+- **MotherDuck** opens `md:` or `md:<database>`. Supply a MotherDuck service token through SQLTools Driver Credentials, choose **Ask on connect**, or explicitly opt into storing it as plaintext.
+- **Advanced URI** accepts another DuckDB-supported database path or URI.
 
-### Explore DB
+Existing connections that use `databaseFilePath` are migrated to the `database` setting when edited or saved.
 
-![Explore DB](https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/explore-db.gif?raw=true)
+### Access modes
 
-### Autocomplete
+- **Automatic** lets DuckDB select its normal access mode.
+- **Read Only** permits queries and explorer reads but rejects writes.
+- **Read/Write** opens the database for writes.
 
-![Autocomplete](https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/autocomplete.gif?raw=true)
+DuckDB allows either one process with read/write access or multiple read-only processes for a local database file. Close other read/write DuckDB processes if the connection reports a lock conflict. See [DuckDB concurrency](https://duckdb.org/docs/current/connect/concurrency).
 
-### Read/Write Connections
+Within one SQLTools process, DuckDB caches file-backed instances by path. Disconnect an existing profile before opening the same file with a different access mode or different advanced instance options; DuckDB rejects conflicting configurations rather than weakening the first profile's settings.
 
-DuckDB has two access modes:
-1. **Read/Write:** One process can both read and write to the database.
-2. **Read Only:** Multiple processes can read from the database, but no processes can write. 
+### MotherDuck credentials
 
-If you open another connection to a database that is already open in read/write mode, you may get an error. Close the read/write connection to resolve this.
+The default token mode uses SQLTools' credential prompt and optional keychain storage, then passes the token to DuckDB only while connecting. **Ask on connect** keeps it out of saved settings entirely. The extension rejects a `motherduck_token` embedded in a URI because SQLTools connection settings may be written to user or workspace JSON.
 
-[More Info](https://duckdb.org/faq#how-does-duckdb-handle-concurrency)
+Create and manage tokens using the [MotherDuck authentication guide](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/).
 
-## Not Supported
-- Loading extensions not included in the [default Node.js installation](#DuckDB-Extensions-Supported)
+### Advanced options
 
-## DuckDB Extensions Supported
+Advanced connection settings map to DuckDB instance options:
 
-For clarity, the following DuckDB extensions are supported
+- `threads`
+- `memory_limit`
+- `temp_directory`
+- `extension_directory`
+- `enable_external_access`
+- `autoinstall_known_extensions`
+- `autoload_known_extensions`
+- `allow_community_extensions`
 
-| Extension        | Supported |
-|------------------|-----------|
-| arrow            |           |
-| autocomplete     |           |
-| fts              |           |
-| httpfs           |           |
-| icu              | 1         |
-| inet             |           |
-| jemalloc         |           |
-| json             | 1         |
-| motherduck       | 1         |
-| parquet          | 1         |
-| postgres_scanner |           |
-| spatial          |           |
-| sqlite_scanner   |           |
-| tpcds            |           |
-| tpch             |           |
+`initializationSql` runs after the connection opens. Use it only for SQL you trust, such as required `SET`, `ATTACH`, `LOAD`, or `CREATE SECRET` statements. If initialization fails, the connection is closed and SQLTools reports the error.
 
+## Value display
 
-## MotherDuck
-To use MotherDuck, you need your [service token](https://motherduck.com/docs/authenticating-to-motherduck#fetching-the-service-token).
+SQLTools results must be safe to pass through JSON. The driver uses DuckDB Node API's JSON conversion instead of converting every `bigint` to a JavaScript `number`.
 
-You should use the filename `md:?motherduck_token=<your token>` when connecting to MotherDuck.
+Large integers, decimals, temporal values, UUIDs, blobs, and bit strings are displayed as strings when a JavaScript number or object would lose information. Lists and arrays remain arrays, structs remain objects, maps use key/value entries, and unions retain their tag and value. Empty results still include their column headers, and duplicate column names are deduplicated for the grid.
 
-## Contributing
+## DuckDB extensions and security
 
-- If you encounter bugs or have feature requests, feel free to open an issue.
-- PRs welcome
+The driver does not silently install an extension or enable unsigned extensions. DuckDB may auto-install and auto-load known extensions unless you disable those behaviors in the advanced connection settings. Community extensions contain third-party code and run with the same permissions as VS Code's SQLTools process.
 
-### Maintained by [<img src="https://github.com/evidence-dev/sqltools-duckdb-driver/blob/master/docs/images/evidence.png?raw=true"  style="height:1em;"/>](https://www.evidence.dev)
+For connections that execute untrusted SQL, consider disabling extension auto-installation, extension auto-loading, community extensions, and external access. Disabling external access also blocks operations such as `ATTACH`, `COPY` to files, and file-reading table functions. Read the [DuckDB security guidance](https://duckdb.org/docs/current/operations_manual/securing_duckdb/overview) before choosing these restrictions.
+
+## Current SQLTools limits
+
+- SQLTools 0.28.6 does not expose a driver cancellation API, so DuckDB's interrupt method cannot be connected to a cancel button.
+- SQLTools materializes the final result array. DuckDB can stream internally, but a large completed grid still consumes memory in the SQLTools process.
+- SQLTools has explorer context values for constraints, types, and sequences, but its typed definition APIs are less complete than the table, view, function, and index APIs.
+
+## Troubleshooting
+
+- **The database is locked:** disconnect the process that has read/write access, or use Read Only when you only need to inspect the file.
+- **A read-only connection rejects a statement:** explorer queries work in read-only mode, but DDL, DML, `ATTACH` without a compatible mode, and some extension operations require write access.
+- **MotherDuck authentication fails:** edit the connection and refresh its SQLTools Driver Credential, or select Ask on connect. Do not add the token to the `md:` URI.
+- **An extension or file function is blocked:** check `enable_external_access`, `autoinstall_known_extensions`, `autoload_known_extensions`, and `allow_community_extensions`. A restrictive setting must be changed by recreating the connection.
+- **The native package does not load:** open the SQLTools output channel and include the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error in the issue.
+
+## Development
+
+This repository uses pnpm. See [GETTING_STARTED.md](GETTING_STARTED.md) for setup, testing, debugging, and packaging commands.
+
+```sh
+corepack enable
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
+pnpm test:integration
+pnpm compile
+pnpm package
+```
+
+Publishing remains manual. CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact.

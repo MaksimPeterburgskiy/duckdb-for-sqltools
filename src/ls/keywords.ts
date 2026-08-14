@@ -160,6 +160,6 @@ const keywordsCompletion: { [w: string]: NSDatabase.IStaticCompletion } = keywor
     }
   };
   return agg;
-}, {});
+}, {} as { [w: string]: NSDatabase.IStaticCompletion });
 
 export default keywordsCompletion;

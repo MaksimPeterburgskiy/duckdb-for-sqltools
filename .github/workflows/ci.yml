@@ -2,22 +2,107 @@ name: CI
 
 on:
   pull_request:
+  push:
     branches:
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu x64
+            os: ubuntu-24.04
+          - name: Ubuntu arm64
+            os: ubuntu-24.04-arm
+          - name: Windows x64
+            os: windows-2025
+          - name: macOS arm64
+            os: macos-14
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 22
+          cache: pnpm
+
+      - name: Report native runtime
+        shell: bash
+        run: node -p "process.platform + ' ' + process.arch + ' Node ' + process.version"
+
       - name: Install dependencies
-        run: yarn install
-      - name: Compile
-        run: yarn compile
-      - name: Package
-        run: yarn package
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Run DuckDB integration tests
+        run: pnpm test:integration
+
+      - name: Compile extension
+        run: pnpm compile
+
+      - name: Load language-server bundle
+        run: node -e "require('./out/ls/plugin.js')"
+
+  package:
+    name: Package VSIX
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Package VSIX
+        run: pnpm package
+
+      - name: Check VSIX for native binaries
+        shell: bash
+        run: |
+          if unzip -Z1 ./*.vsix | grep -E 'extension/node_modules/@duckdb/|\.node$'; then
+            echo "The VSIX must not bundle host-specific native binaries."
+            exit 1
+          fi
+
+      - name: Upload tested VSIX
+        uses: actions/upload-artifact@v7
+        with:
+          name: sqltools-duckdb-driver-vsix
+          path: "*.vsix"
+          if-no-files-found: error
+          archive: false

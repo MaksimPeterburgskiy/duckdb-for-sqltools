@@ -1,6 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "definitions": {
+    "localDatabase": {
+      "title": "Database file",
+      "description": "Choose an existing DuckDB file or a path for a new database.",
+      "type": "string",
+      "minLength": 1
+    },
+    "motherDuckTokenMode": {
+      "title": "Token storage",
+      "type": "string",
+      "enum": [
+        "SQLTools Driver Credentials",
+        "Ask on connect",
+        "Save as plaintext in settings"
+      ],
+      "default": "SQLTools Driver Credentials"
+    },
+    "motherDuckToken": {
+      "title": "MotherDuck token",
+      "description": "This token will be stored as plaintext in your SQLTools connection settings.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
   "properties": {
     "name": {
       "title": "Name",
@@ -8,16 +32,176 @@
       "minLength": 1,
       "default": "DuckDB"
     },
-    "databaseFilePath": {
-      "title": "Database file",
+    "connectionMethod": {
+      "title": "Connect to",
       "type": "string",
-      "minLength": 1
+      "enum": [
+        "Local File",
+        "In-Memory",
+        "MotherDuck",
+        "Advanced URI"
+      ],
+      "default": "Local File"
     },
-    "accessMode":{
-      "title": "Access Mode",
+    "accessMode": {
+      "title": "Access mode",
+      "description": "Automatic lets DuckDB choose. Read Only prevents writes. In-memory databases are always writable.",
       "type": "string",
-      "enum": ["Read Only", "Read/Write"],
-      "default": "Read Only"
+      "enum": [
+        "Automatic",
+        "Read Only",
+        "Read/Write"
+      ],
+      "default": "Automatic"
+    },
+    "duckdbOptions": {
+      "title": "DuckDB options",
+      "description": "Optional settings applied when the DuckDB instance opens.",
+      "type": "object",
+      "properties": {
+        "threads": {
+          "title": "Threads",
+          "description": "Maximum number of DuckDB worker threads.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "memory_limit": {
+          "title": "Memory limit",
+          "description": "DuckDB size value such as 4GB or 750MB.",
+          "type": "string",
+          "minLength": 1
+        },
+        "temp_directory": {
+          "title": "Temporary directory",
+          "type": "string",
+          "minLength": 1
+        },
+        "extension_directory": {
+          "title": "Extension directory",
+          "type": "string",
+          "minLength": 1
+        },
+        "enable_external_access": {
+          "title": "Allow external access",
+          "description": "Allows file readers, COPY, ATTACH, and extension downloads.",
+          "type": "boolean",
+          "default": true
+        },
+        "autoinstall_known_extensions": {
+          "title": "Automatically install known extensions",
+          "type": "boolean",
+          "default": true
+        },
+        "autoload_known_extensions": {
+          "title": "Automatically load known extensions",
+          "type": "boolean",
+          "default": true
+        },
+        "allow_community_extensions": {
+          "title": "Allow community extensions",
+          "description": "Community extensions are not maintained by the DuckDB team.",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "initializationSql": {
+      "title": "Initialization SQL",
+      "description": "Trusted SQL to run after opening the connection. Use it for SET, ATTACH, LOAD, or CREATE SECRET statements.",
+      "type": "string"
     }
-  }
+  },
+  "dependencies": {
+    "connectionMethod": {
+      "oneOf": [
+        {
+          "properties": {
+            "connectionMethod": {
+              "enum": ["Local File"]
+            },
+            "database": {
+              "$ref": "#/definitions/localDatabase"
+            }
+          },
+          "required": ["database"]
+        },
+        {
+          "properties": {
+            "connectionMethod": {
+              "enum": ["In-Memory"]
+            }
+          }
+        },
+        {
+          "properties": {
+            "connectionMethod": {
+              "enum": ["MotherDuck"]
+            },
+            "motherDuckDatabase": {
+              "title": "MotherDuck database",
+              "description": "Optional database name. Leave blank to use your default MotherDuck database.",
+              "type": "string",
+              "default": ""
+            },
+            "useToken": {
+              "$ref": "#/definitions/motherDuckTokenMode"
+            }
+          },
+          "required": ["useToken"]
+        },
+        {
+          "properties": {
+            "connectionMethod": {
+              "enum": ["Advanced URI"]
+            },
+            "databaseUri": {
+              "title": "DuckDB path or URI",
+              "description": "Enter a DuckDB-supported path or URI. Do not include credentials in it.",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["databaseUri"]
+        }
+      ]
+    },
+    "useToken": {
+      "oneOf": [
+        {
+          "properties": {
+            "useToken": {
+              "enum": ["SQLTools Driver Credentials"]
+            }
+          }
+        },
+        {
+          "properties": {
+            "useToken": {
+              "enum": ["Ask on connect"]
+            },
+            "askForPassword": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        {
+          "properties": {
+            "useToken": {
+              "enum": ["Save as plaintext in settings"]
+            },
+            "password": {
+              "$ref": "#/definitions/motherDuckToken"
+            }
+          },
+          "required": ["password"]
+        }
+      ]
+    }
+  },
+  "required": [
+    "name",
+    "connectionMethod"
+  ]
 }

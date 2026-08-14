@@ -2,7 +2,25 @@ import * as vscode from 'vscode';
 import { IExtension, IExtensionPlugin, IDriverExtensionApi } from '@sqltools/types';
 import { ExtensionContext } from 'vscode';
 import { DRIVER_ALIASES } from './constants';
+import {
+  isMotherDuckConnection,
+  parseBeforeEditConnection,
+  parseBeforeSaveConnection,
+  resolveConnectionPaths,
+} from './connection-parser';
 const { publisher, name, displayName } = require('../package.json');
+
+const AUTHENTICATION_PROVIDER = 'sqltools-driver-credentials';
+const MOTHERDUCK_CREDENTIAL_SCOPE = 'MotherDuck token';
+
+function getWorkspaceContext() {
+  return {
+    workspaceFolders: vscode.workspace.workspaceFolders?.map(folder => ({
+      name: folder.name,
+      fsPath: folder.uri.fsPath,
+    })),
+  };
+}
 
 export async function activate(extContext: ExtensionContext): Promise<IDriverExtensionApi> {
   const sqltools = vscode.extensions.getExtension<IExtension>('mtxr.sqltools');
@@ -38,38 +56,21 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
   api.registerPlugin(plugin);
   return {
     driverName: displayName,
-    parseBeforeSaveConnection: ({ connInfo }) => {
-      /**
-       * This hook is called before saving the connection using the assistant
-       * so you can do any transformations before saving it to disk.active
-       * EG: relative file path transformation, string manipulation etc
-       * Below is the exmaple for SQLite, where we save the DB path relative to workspace
-       * and later we transform it back to absolute before editing
-       */
-      // if (path.isAbsolute(connInfo.database)) {
-      //   const databaseUri = Uri.file(connInfo.database);
-      //   const dbWorkspace = workspace.getWorkspaceFolder(databaseUri);
-      //   if (dbWorkspace) {
-      //     connInfo.database = `\$\{workspaceFolder:${dbWorkspace.name}\}/${workspace.asRelativePath(connInfo.database, false)}`;
-      //   }
-      // }
-      return connInfo;
-    },
-    parseBeforeEditConnection: ({ connInfo }) => {
-      /**
-       * This hook is called before editing the connection using the assistant
-       * so you can do any transformations before editing it.
-       * EG: absolute file path transformation, string manipulation etc
-       * Below is the exmaple for SQLite, where we use relative path to save,
-       * but we transform to asolute before editing
-       */
-      // if (!path.isAbsolute(connInfo.database) && /\$\{workspaceFolder:(.+)}/g.test(connInfo.database)) {
-      //   const workspaceName = connInfo.database.match(/\$\{workspaceFolder:(.+)}/)[1];
-      //   const dbWorkspace = workspace.workspaceFolders.find(w => w.name === workspaceName);
-      //   if (dbWorkspace)
-      //     connInfo.database = path.resolve(dbWorkspace.uri.fsPath, connInfo.database.replace(/\$\{workspaceFolder:(.+)}/g, './'));
-      // }
-      return connInfo;
+    parseBeforeSaveConnection: ({ connInfo }) =>
+      parseBeforeSaveConnection({ connInfo }, getWorkspaceContext()),
+    parseBeforeEditConnection: ({ connInfo }) =>
+      parseBeforeEditConnection({ connInfo }, getWorkspaceContext()),
+    resolveConnection: async ({ connInfo }) => {
+      const resolved = resolveConnectionPaths(connInfo, getWorkspaceContext());
+      if (isMotherDuckConnection(resolved) && resolved.password === undefined && !resolved.askForPassword) {
+        const scopes = [resolved.name ?? 'DuckDB', MOTHERDUCK_CREDENTIAL_SCOPE];
+        let session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { silent: true });
+        if (!session) {
+          session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { createIfNone: true });
+        }
+        if (session) resolved.password = session.accessToken;
+      }
+      return resolved;
     },
     driverAliases: DRIVER_ALIASES,
   };

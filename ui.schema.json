@@ -1,8 +1,64 @@
 {
-  "ui:order": ["database"],
-  "databaseFilePath": { "ui:widget": "file" },
+  "ui:order": [
+    "name",
+    "connectionMethod",
+    "database",
+    "motherDuckDatabase",
+    "databaseUri",
+    "useToken",
+    "password",
+    "askForPassword",
+    "accessMode",
+    "duckdbOptions",
+    "initializationSql",
+    "*"
+  ],
+  "database": {
+    "ui:widget": "file",
+    "ui:help": "Paths inside the current workspace are saved relative to that workspace."
+  },
+  "motherDuckDatabase": {
+    "ui:placeholder": "my_database"
+  },
+  "databaseUri": {
+    "ui:placeholder": "duckdb:path-or-uri"
+  },
+  "password": {
+    "ui:widget": "password"
+  },
+  "askForPassword": {
+    "ui:widget": "hidden"
+  },
   "accessMode": {
-    "ui:help": "Warning: Read/Write connections prevent any other connections until they are closed"
+    "ui:help": "Read/Write file connections can prevent other DuckDB processes from opening the same file for writing."
+  },
+  "duckdbOptions": {
+    "ui:order": [
+      "threads",
+      "memory_limit",
+      "temp_directory",
+      "extension_directory",
+      "enable_external_access",
+      "autoinstall_known_extensions",
+      "autoload_known_extensions",
+      "allow_community_extensions",
+      "*"
+    ],
+    "memory_limit": {
+      "ui:placeholder": "4GB"
+    },
+    "temp_directory": {
+      "ui:placeholder": "/path/to/duckdb.tmp"
+    },
+    "extension_directory": {
+      "ui:placeholder": "/path/to/extensions"
+    }
+  },
+  "initializationSql": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 8
+    },
+    "ui:help": "This SQL runs with the same permissions as every query from this connection."
   }
-
 }

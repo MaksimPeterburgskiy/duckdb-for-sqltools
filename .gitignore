@@ -1,4 +1,7 @@
 .DS_Store
 node_modules/
 out/
+.pnpm-store/
+.vscode-test/
+coverage/
 *.vsix

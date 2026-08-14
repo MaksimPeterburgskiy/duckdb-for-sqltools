@@ -1,0 +1,9 @@
+allowBuilds:
+  '@vscode/vsce-sign': true
+  cpu-features: true
+  esbuild: true
+  keytar: true
+  ssh2: true
+
+overrides:
+  esbuild: 0.28.2
