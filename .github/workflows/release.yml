@@ -21,7 +21,9 @@ jobs:
   version:
     name: Prepare release
     if: github.ref == 'refs/heads/main'
-    environment: release
+    environment:
+      name: release
+      deployment: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -203,7 +205,7 @@ jobs:
           manifest_file="$(mktemp)"
           unzip -p "$expected" extension/package.json > "$manifest_file"
           node -e '
-            const manifest = require(process.argv[1]);
+            const manifest = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
             const expectedVersion = process.argv[2];
             if (manifest.publisher !== "MaksimPeterburgskiy") throw new Error(`Unexpected publisher: ${manifest.publisher}`);
             if (manifest.name !== "duckdb-for-sqltools") throw new Error(`Unexpected name: ${manifest.name}`);
@@ -225,7 +227,9 @@ jobs:
   publish:
     name: Publish GitHub release
     needs: [version, package]
-    environment: release
+    environment:
+      name: release
+      deployment: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
