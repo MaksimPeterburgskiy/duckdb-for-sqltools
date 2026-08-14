@@ -70,7 +70,26 @@ jobs:
               exit 1
             fi
 
-            git add -- package.json
+            previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+            log_range="HEAD"
+            if [[ -n "$previous_tag" ]]; then
+              log_range="$previous_tag..HEAD"
+            fi
+            git log "$log_range" --no-merges --pretty='- %s' \
+              | grep -vE '^- Release v[0-9]' > /tmp/changelog-entries.txt || true
+            if [[ ! -s /tmp/changelog-entries.txt ]]; then
+              echo "- Maintenance release." > /tmp/changelog-entries.txt
+            fi
+
+            awk -v ver="$version" '
+              BEGIN { while ((getline line < "/tmp/changelog-entries.txt") > 0) entries = entries line "\n" }
+              /^## / && !inserted { printf "## %s\n\n%s\n", ver, entries; inserted = 1 }
+              { print }
+              END { if (!inserted) printf "\n## %s\n\n%s", ver, entries }
+            ' CHANGELOG.md > /tmp/CHANGELOG.md.new
+            mv /tmp/CHANGELOG.md.new CHANGELOG.md
+
+            git add -- package.json CHANGELOG.md
             git commit -m "Release $tag"
             gh auth setup-git
             git push origin HEAD:main
@@ -261,6 +280,7 @@ jobs:
         run: |
           set -euo pipefail
           previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "$SHA^" 2>/dev/null || true)"
+          duckdb_api_version="$(node -p "require('./package.json').devDependencies['@duckdb/node-api']")"
 
           if [[ -n "$previous_tag" ]]; then
             {
@@ -275,7 +295,7 @@ jobs:
             cat > notes.md <<EOF
           First public release of DuckDB for SQLTools.
 
-          This release packages the standalone SQLTools driver based on the original Evidence extension, updated to DuckDB Node API 1.5.5.
+          This release packages the standalone SQLTools DuckDB driver, built on DuckDB Node API $duckdb_api_version.
           EOF
           fi
 

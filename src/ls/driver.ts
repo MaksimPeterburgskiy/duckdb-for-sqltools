@@ -15,9 +15,11 @@ import type {
 import keywordsCompletion from './keywords';
 import queries from './queries';
 import { qualifiedName } from './sql';
+import { devDependencies } from '../../package.json';
 
 const NODE_API_PACKAGE = '@duckdb/node-api';
-const NODE_API_VERSION = '1.5.5-r.4';
+// Baked in at bundle time so the installed package always matches package.json.
+const NODE_API_VERSION = devDependencies[NODE_API_PACKAGE];
 
 type AccessMode = 'Automatic' | 'Read Only' | 'Read/Write';
 

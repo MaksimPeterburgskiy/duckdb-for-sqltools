@@ -11,8 +11,6 @@ src/**
 **/.eslintrc.json
 **/*.map
 **/*.ts
-docs/images/**
 node_modules/**
 pnpm-lock.yaml
 pnpm-workspace.yaml
-plan.md

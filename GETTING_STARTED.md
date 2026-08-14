@@ -2,7 +2,7 @@
 
 This extension has two entry points. `src/extension.ts` runs in the VS Code extension host and registers the driver with SQLTools. `src/ls/plugin.ts` runs in the SQLTools language-server process and loads the DuckDB driver.
 
-DuckDB is a native dependency. SQLTools installs the exact `@duckdb/node-api` version declared by the driver into its own dependency directory, using the language-server runtime and machine architecture. Keep the development dependency and the driver's dynamic dependency declaration on the same exact version.
+DuckDB is a native dependency. SQLTools installs the exact `@duckdb/node-api` version declared by the driver into its own dependency directory, using the language-server runtime and machine architecture. The driver reads the exact version from `package.json`'s `devDependencies` at bundle time, so updating the dependency there updates the driver's declaration automatically.
 
 ## Requirements
 
@@ -88,7 +88,7 @@ The driver uses `sql_auto_complete()` only when the official `autocomplete` exte
 
 `pnpm package` creates a VSIX without bundling a host-specific DuckDB binary. CI uploads the VSIX after the complete platform matrix passes.
 
-GitHub releases are created with the manual **Release** workflow on `main`. Select a patch, minor, or major bump. The workflow commits the version, reruns the complete platform matrix, packages and verifies the VSIX, attaches it and its SHA-256 checksum to a draft, then publishes the release and tag. A failed run leaves the draft in place and can be resumed by dispatching the same bump again.
+GitHub releases are created with the manual **Release** workflow on `main`. Select a patch, minor, or major bump. The workflow commits the version bump together with a generated `CHANGELOG.md` section, reruns the complete platform matrix, packages and verifies the VSIX, attaches it and its SHA-256 checksum to a draft, then publishes the release and tag. A failed run leaves the draft in place and can be resumed by dispatching the same bump again.
 
 The release job uses the protected `release` environment and its repository-scoped `RELEASE_TOKEN`. It does not publish to the Visual Studio Marketplace or Open VSX.
 
