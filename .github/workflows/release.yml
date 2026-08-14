@@ -275,7 +275,7 @@ jobs:
             cat > notes.md <<EOF
           First public release of DuckDB for SQLTools.
 
-          This release packages the standalone SQLTools driver based on the original Evidence extension, updated to DuckDB Node API 1.5.5.
+          This release packages the standalone SQLTools DuckDB driver, built on DuckDB Node API 1.5.5.
           EOF
           fi
 

@@ -1,37 +1,65 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
+
+<img src="icons/duckdb-logo.png" alt="DuckDB for SQLTools" width="96" height="96" />
 
 # DuckDB for SQLTools
 
-Run queries and browse [DuckDB](https://duckdb.org/) databases from [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) in VS Code.
+**Query and explore DuckDB and MotherDuck databases without leaving VS Code.**
 
-This is an independent fork of the [DuckDB driver originally maintained by Evidence](https://github.com/evidence-dev/sqltools-duckdb-driver). It uses DuckDB 1.5.5 through `@duckdb/node-api@1.5.5-r.4`. The extension requires VS Code 1.87 or newer and installs the matching native DuckDB package for the SQLTools host platform.
+[![CI](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml/badge.svg)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/MaksimPeterburgskiy/duckdb-for-sqltools?label=download&color=fff100&labelColor=444)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
+A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) driver for [DuckDB](https://duckdb.org/) 1.5, built on the official [DuckDB Node API](https://duckdb.org/docs/stable/clients/node_neo/overview).
+
+[Install](#install) ·
+[Features](#features) ·
+[Connections](#connection-targets) ·
+[Security](#duckdb-extensions-and-security) ·
+[Troubleshooting](#troubleshooting) ·
+[Development](#development)
+
+</div>
+
+---
 
 ## Install
 
-Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), then download the VSIX from the [latest GitHub release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest). Install it from VS Code with **Extensions: Install from VSIX...**, or from a terminal:
+1. Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) from the marketplace.
+2. Download the VSIX from the [latest release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest).
+3. Install it with **Extensions: Install from VSIX...** in VS Code, or from a terminal:
 
 ```sh
 code --install-extension duckdb-for-sqltools-<version>.vsix
 ```
 
-The Evidence extension and DuckDB for SQLTools both register the SQLTools `DuckDB` driver. Disable the Evidence extension in the same VS Code profile before enabling this one. Existing SQLTools connections that use the `DuckDB` driver continue to work.
+Then open the SQLTools sidebar, choose **Add New Connection**, and select **DuckDB**.
 
-Open the SQLTools sidebar, choose **Add New Connection**, then select **DuckDB**.
+> **Requirements:** VS Code 1.87 or newer. The extension installs the matching native DuckDB package for your platform on first connect.
 
 ## Features
 
-- Local file, in-memory, MotherDuck, and advanced URI connections
+### Connections
+- Local file, in-memory, MotherDuck, and advanced URI connection modes
 - Automatic, read-only, and read/write access modes
-- Multiple statements with one SQLTools result per statement
-- Lossless display of DuckDB integers, decimals, temporal values, blobs, and nested types
-- Catalog-aware explorer for attached databases, schemas, tables, views, columns, constraints, indexes, sequences, types, functions, and macros
-- Fully qualified previews, counts, definitions, and INSERT snippets
-- DuckDB keyword completion and catalog-aware table and column completion
-- Context-aware `sql_auto_complete()` suggestions when trusted initialization SQL has already loaded DuckDB's official `autocomplete` extension
-- Workspace-relative paths for database files inside the current VS Code workspace
-- Optional connection settings and initialization SQL
+- Workspace-relative paths for database files, so connections move with the project
+- Optional instance settings (`threads`, `memory_limit`, external-access and extension controls) and trusted initialization SQL
 
-The explorer uses `information_schema` for its portable catalog, schema, table, view, and column data. DuckDB metadata functions provide details that the information schema does not expose, including database access state, constraint expressions, indexes, sequences, macros, and user-defined types. Object names are kept as separate catalog, schema, and object parts, so names with spaces, dots, quotes, Unicode, or SQL keywords work correctly.
+### Explorer
+- Catalog-aware browsing of attached databases, schemas, tables, views, columns, constraints, indexes, sequences, types, functions, and macros
+- Fully qualified previews, row counts, definitions, and INSERT snippets
+- Correct handling of names with spaces, dots, quotes, Unicode, and SQL keywords
+
+### Queries and results
+- Multiple statements per run, with one SQLTools result grid per statement
+- Lossless display of DuckDB integers, decimals, temporal values, blobs, and nested types
+- Empty results keep their column headers; duplicate column names are deduplicated
+
+### Autocomplete
+- DuckDB keyword completion plus catalog-aware table and column completion
+- Context-aware `sql_auto_complete()` suggestions when trusted initialization SQL has loaded DuckDB's official `autocomplete` extension
+
+The explorer uses `information_schema` for portable catalog data and DuckDB's metadata functions for everything the information schema does not expose: database access state, constraint expressions, indexes, sequences, macros, and user-defined types.
 
 ## Connection targets
 
@@ -40,7 +68,7 @@ The connection assistant offers four modes:
 - **Local File** opens a `.duckdb` file. Files inside a VS Code workspace are stored as workspace-relative paths so the connection can move with the project.
 - **In-Memory** opens a temporary `:memory:` database. In-memory connections are always writable and disappear when disconnected.
 - **MotherDuck** opens `md:` or `md:<database>`. Supply a MotherDuck service token through SQLTools Driver Credentials, choose **Ask on connect**, or explicitly opt into storing it as plaintext.
-- **Advanced URI** accepts another DuckDB-supported database path or URI.
+- **Advanced URI** accepts any other DuckDB-supported database path or URI.
 
 Existing connections that use `databaseFilePath` are migrated to the `database` setting when edited or saved.
 
@@ -77,19 +105,19 @@ Advanced connection settings map to DuckDB instance options:
 
 ## Value display
 
-SQLTools results must be safe to pass through JSON. The driver uses DuckDB Node API's JSON conversion instead of converting every `bigint` to a JavaScript `number`.
+SQLTools results must be safe to pass through JSON. The driver uses the DuckDB Node API's JSON conversion instead of converting every `bigint` to a JavaScript `number`.
 
-Large integers, decimals, temporal values, UUIDs, blobs, and bit strings are displayed as strings when a JavaScript number or object would lose information. Lists and arrays remain arrays, structs remain objects, maps use key/value entries, and unions retain their tag and value. Empty results still include their column headers, and duplicate column names are deduplicated for the grid.
+Large integers, decimals, temporal values, UUIDs, blobs, and bit strings are displayed as strings when a JavaScript number or object would lose information. Lists and arrays remain arrays, structs remain objects, maps use key/value entries, and unions retain their tag and value.
 
 ## DuckDB extensions and security
 
-The driver does not silently install an extension or enable unsigned extensions. DuckDB may auto-install and auto-load known extensions unless you disable those behaviors in the advanced connection settings. Community extensions contain third-party code and run with the same permissions as VS Code's SQLTools process.
+The driver never silently installs an extension or enables unsigned extensions. DuckDB may auto-install and auto-load known extensions unless you disable those behaviors in the advanced connection settings. Community extensions contain third-party code and run with the same permissions as VS Code's SQLTools process.
 
 For connections that execute untrusted SQL, consider disabling extension auto-installation, extension auto-loading, community extensions, and external access. Disabling external access also blocks operations such as `ATTACH`, `COPY` to files, and file-reading table functions. Read the [DuckDB security guidance](https://duckdb.org/docs/current/operations_manual/securing_duckdb/overview) before choosing these restrictions.
 
 ## Current SQLTools limits
 
-- SQLTools 0.28.6 does not expose a driver cancellation API, so DuckDB's interrupt method cannot be connected to a cancel button.
+- SQLTools does not expose a driver cancellation API, so DuckDB's interrupt method cannot be connected to a cancel button.
 - SQLTools materializes the final result array. DuckDB can stream internally, but a large completed grid still consumes memory in the SQLTools process.
 - SQLTools has explorer context values for constraints, types, and sequences, but its typed definition APIs are less complete than the table, view, function, and index APIs.
 
@@ -99,20 +127,27 @@ For connections that execute untrusted SQL, consider disabling extension auto-in
 - **A read-only connection rejects a statement:** explorer queries work in read-only mode, but DDL, DML, `ATTACH` without a compatible mode, and some extension operations require write access.
 - **MotherDuck authentication fails:** edit the connection and refresh its SQLTools Driver Credential, or select Ask on connect. Do not add the token to the `md:` URI.
 - **An extension or file function is blocked:** check `enable_external_access`, `autoinstall_known_extensions`, `autoload_known_extensions`, and `allow_community_extensions`. A restrictive setting must be changed by recreating the connection.
-- **The native package does not load:** open the SQLTools output channel and include the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error in the issue.
+- **The native package does not load:** open the SQLTools output channel and [file an issue](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues) with the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error.
 
 ## Development
 
-This repository uses pnpm. See [GETTING_STARTED.md](GETTING_STARTED.md) for setup, testing, debugging, and packaging commands.
+This repository uses pnpm. See [GETTING_STARTED.md](GETTING_STARTED.md) for setup, testing, debugging, and packaging details.
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm test
-pnpm test:integration
-pnpm compile
-pnpm package
 ```
 
+| Command | What it does |
+| --- | --- |
+| `pnpm typecheck` | Type-check with `tsc` |
+| `pnpm test` | Run the unit tests |
+| `pnpm test:integration` | Exercise real DuckDB databases through the native Node API |
+| `pnpm compile` | Bundle the extension entry points |
+| `pnpm package` | Build a VSIX |
+
 CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers publish tested artifacts through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md).
+
+## License
+
+[MIT](LICENSE.md)

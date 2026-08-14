@@ -1,15 +1,6 @@
 # Changelog
 
-DuckDB for SQLTools starts its own release history at 1.0.0. GitHub Releases contain the notes for each published version.
-
-This project is based on the MIT-licensed DuckDB driver originally maintained by Evidence. The repository history preserves the earlier implementation and its contributors.
-
-## Unreleased
-
-- Renamed the standalone extension to DuckDB for SQLTools.
-- Moved distribution to versioned VSIX files on GitHub Releases.
-
-## Development history before the standalone release
+Release notes for each published version also appear on [GitHub Releases](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases).
 
 ## 2.0.0
 
@@ -27,41 +18,7 @@ This project is based on the MIT-licensed DuckDB driver originally maintained by
 - Replaced Yarn with pnpm and added typecheck, unit, native integration, compile, and VSIX packaging checks.
 - Added CI coverage for Ubuntu x64, Ubuntu arm64, Windows x64, and macOS arm64.
 
-## 1.3.2
-
-- v1.3.2 DuckDB Support
-
 ## 1.0.0
 
-- v1.0.0 DuckDB Support
-
-## 0.10.2
-
-- v0.10.2 DuckDB support
-- Changed semantic versioning to follow DuckDB's
-
-## 0.10.0
-
-- v0.10.0 DuckDB support
-- Changed semantic versioning to follow DuckDB's
-
-## 0.0.5
-
-- v0.9.1 DuckDB support
-
-## 0.0.3
-
-- Add support for Read/Write connections
-- Minor improvements to output messages
-
-## 0.0.2
-
-- Minor fixes to docs
-
-## 0.0.1
-
-- v0.8.1 DuckDB support
-- Connect to DuckDB instance
-- Run queries against DuckDB instance
-- Explore tables and columns in the sidebar
-- Autocomplete for common keywords, and database tables (N.B. column autocomplete is not yet supported)
+- First standalone release as DuckDB for SQLTools.
+- Moved distribution to versioned VSIX files on GitHub Releases.
