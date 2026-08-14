@@ -10,7 +10,7 @@
 [![Latest release](https://img.shields.io/github/v/release/MaksimPeterburgskiy/duckdb-for-sqltools?label=download&color=fff100&labelColor=444)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
-A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) driver for [DuckDB](https://duckdb.org/) 1.5, built on the official [DuckDB Node API](https://duckdb.org/docs/stable/clients/node_neo/overview).
+A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) driver for [DuckDB](https://duckdb.org/), built on the official [DuckDB Node API](https://duckdb.org/docs/stable/clients/node_neo/overview).
 
 [Install](#install) ·
 [Features](#features) ·
