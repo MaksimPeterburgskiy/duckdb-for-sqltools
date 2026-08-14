@@ -1,0 +1,302 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Prepare release
+    if: github.ref == 'refs/heads/main'
+    environment: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare version commit and draft release
+        id: release
+        shell: bash
+        env:
+          BUMP: ${{ inputs.bump }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          current_version="$(node -p "require('./package.json').version")"
+          current_tag="v$current_version"
+          head_subject="$(git log -1 --pretty=%s)"
+
+          if [[ "$current_version" != "0.0.0" \
+            && "$head_subject" == "Release $current_tag" \
+            && -z "$(git tag --list "$current_tag")" ]]; then
+            version="$current_version"
+            tag="$current_tag"
+            echo "Resuming incomplete $tag from the current main commit."
+          else
+            npm version "$BUMP" --no-git-tag-version
+            version="$(node -p "require('./package.json').version")"
+            tag="v$version"
+
+            if git rev-parse --verify --quiet "refs/tags/$tag"; then
+              echo "$tag already exists."
+              exit 1
+            fi
+
+            git add -- package.json
+            git commit -m "Release $tag"
+            gh auth setup-git
+            git push origin HEAD:main
+          fi
+
+          sha="$(git rev-parse HEAD)"
+          draft_id="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.draft and .tag_name == \"$tag\") | .id" | head -n1)"
+
+          if [[ -n "$draft_id" ]]; then
+            draft_target="$(gh api "repos/$GITHUB_REPOSITORY/releases/$draft_id" --jq .target_commitish)"
+            if [[ "$draft_target" != "$sha" ]]; then
+              echo "Draft $tag targets $draft_target instead of $sha."
+              exit 1
+            fi
+            echo "Reusing draft release $draft_id for $tag."
+          else
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "$tag already has a published release."
+              exit 1
+            fi
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$sha" \
+              --draft \
+              --title "DuckDB for SQLTools $tag"
+          fi
+
+          {
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "sha=$sha"
+          } >> "$GITHUB_OUTPUT"
+
+  verify:
+    name: ${{ matrix.name }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu x64
+            os: ubuntu-24.04
+          - name: Ubuntu arm64
+            os: ubuntu-24.04-arm
+          - name: Windows x64
+            os: windows-2025
+          - name: macOS arm64
+            os: macos-14
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Report native runtime
+        shell: bash
+        run: node -p "process.platform + ' ' + process.arch + ' Node ' + process.version"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify extension
+        run: pnpm verify
+
+      - name: Compile extension
+        run: pnpm compile
+
+      - name: Load language-server bundle
+        run: node -e "require('./out/ls/plugin.js')"
+
+  package:
+    name: Package release VSIX
+    needs: [version, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      vsix_name: ${{ steps.validate.outputs.vsix_name }}
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Package VSIX
+        run: pnpm package
+
+      - name: Validate release VSIX
+        id: validate
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          expected="duckdb-for-sqltools-$VERSION.vsix"
+          if [[ ! -f "$expected" ]]; then
+            echo "Expected $expected, found:"
+            find . -maxdepth 1 -name '*.vsix' -print
+            exit 1
+          fi
+
+          if unzip -Z1 "$expected" | grep -E 'extension/node_modules/@duckdb/|\.node$'; then
+            echo "The VSIX must not bundle host-specific native binaries."
+            exit 1
+          fi
+
+          manifest_file="$(mktemp)"
+          unzip -p "$expected" extension/package.json > "$manifest_file"
+          node -e '
+            const manifest = require(process.argv[1]);
+            const expectedVersion = process.argv[2];
+            if (manifest.publisher !== "MaksimPeterburgskiy") throw new Error(`Unexpected publisher: ${manifest.publisher}`);
+            if (manifest.name !== "duckdb-for-sqltools") throw new Error(`Unexpected name: ${manifest.name}`);
+            if (manifest.version !== expectedVersion) throw new Error(`Unexpected version: ${manifest.version}`);
+          ' "$manifest_file" "$VERSION"
+
+          sha256sum "$expected" > "$expected.sha256"
+          echo "vsix_name=$expected" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: release-candidate-${{ needs.version.outputs.version }}
+          path: |
+            ${{ steps.validate.outputs.vsix_name }}
+            ${{ steps.validate.outputs.vsix_name }}.sha256
+          if-no-files-found: error
+          archive: false
+
+  publish:
+    name: Publish GitHub release
+    needs: [version, package]
+    environment: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download release candidate
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-candidate-${{ needs.version.outputs.version }}
+          path: release-candidate
+
+      - name: Verify release candidate checksum
+        working-directory: release-candidate
+        run: sha256sum --check "${{ needs.package.outputs.vsix_name }}.sha256"
+
+      - name: Generate release notes
+        shell: bash
+        env:
+          SHA: ${{ needs.version.outputs.sha }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "$SHA^" 2>/dev/null || true)"
+
+          if [[ -n "$previous_tag" ]]; then
+            {
+              echo "## Changes since $previous_tag"
+              echo
+              git log "$previous_tag..$SHA" --no-merges --pretty='- %s (%h)' \
+                | grep -vE '^- Release v[0-9]' || true
+              echo
+              echo "**Full changelog**: https://github.com/$GITHUB_REPOSITORY/compare/$previous_tag...$TAG"
+            } > notes.md
+          else
+            cat > notes.md <<EOF
+          First public release of DuckDB for SQLTools.
+
+          This release packages the standalone SQLTools driver based on the original Evidence extension, updated to DuckDB Node API 1.5.5.
+          EOF
+          fi
+
+      - name: Upload assets and publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VSIX_NAME: ${{ needs.package.outputs.vsix_name }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" \
+            "release-candidate/$VSIX_NAME" \
+            "release-candidate/$VSIX_NAME.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+          gh release edit "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "DuckDB for SQLTools $TAG" \
+            --notes-file notes.md
+
+          asset_names="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          grep -Fxq "$VSIX_NAME" <<< "$asset_names"
+          grep -Fxq "$VSIX_NAME.sha256" <<< "$asset_names"
+
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

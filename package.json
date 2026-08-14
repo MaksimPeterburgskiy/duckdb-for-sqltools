@@ -1,21 +1,21 @@
 {
-  "name": "sqltools-duckdb-driver",
-  "displayName": "DuckDB Driver for SQLTools",
-  "description": "Latest DuckDB support: Run queries and explore your DuckDB Database in VSCode",
-  "version": "2.0.0",
+  "name": "duckdb-for-sqltools",
+  "displayName": "DuckDB for SQLTools",
+  "description": "Query and explore DuckDB databases in VS Code with SQLTools",
+  "version": "0.0.0",
   "packageManager": "pnpm@11.21.0",
   "engines": {
     "vscode": "^1.87.0",
     "node": ">=22.13.0"
   },
-  "publisher": "Evidence",
+  "publisher": "MaksimPeterburgskiy",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/evidence-dev/sqltools-duckdb-driver"
+    "url": "https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools"
   },
   "bugs": {
-    "url": "https://github.com/evidence-dev/sqltools-duckdb-driver/issues"
+    "url": "https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues"
   },
   "icon": "icons/duckdb-logo.png",
   "scripts": {
@@ -28,8 +28,7 @@
     "compile": "rimraf out && tsup src/extension.ts src/ls/plugin.ts -d out --external=vscode --external=cpu-features --external=./crypto/build/Release/sshcrypto.node",
     "watch": "rimraf out && tsup src/extension.ts src/ls/plugin.ts -d out --external=vscode --external=cpu-features --external=./crypto/build/Release/sshcrypto.node --watch",
     "vscode:prepublish": "pnpm run verify && pnpm run compile",
-    "package": "vsce package --allow-star-activation --no-dependencies",
-    "publish": "vsce publish"
+    "package": "vsce package --allow-star-activation --no-dependencies"
   },
   "keywords": [
     "sqltools-driver",

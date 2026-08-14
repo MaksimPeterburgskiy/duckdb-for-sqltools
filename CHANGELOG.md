@@ -1,4 +1,15 @@
-# Change Log
+# Changelog
+
+DuckDB for SQLTools starts its own release history at 1.0.0. GitHub Releases contain the notes for each published version.
+
+This project is based on the MIT-licensed DuckDB driver originally maintained by Evidence. The repository history preserves the earlier implementation and its contributors.
+
+## Unreleased
+
+- Renamed the standalone extension to DuckDB for SQLTools.
+- Moved distribution to versioned VSIX files on GitHub Releases.
+
+## Development history before the standalone release
 
 ## 2.0.0
 

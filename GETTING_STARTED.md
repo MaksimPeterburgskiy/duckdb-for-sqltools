@@ -1,4 +1,4 @@
-# Developing the SQLTools DuckDB driver
+# Developing DuckDB for SQLTools
 
 This extension has two entry points. `src/extension.ts` runs in the VS Code extension host and registers the driver with SQLTools. `src/ls/plugin.ts` runs in the SQLTools language-server process and loads the DuckDB driver.
 
@@ -86,8 +86,12 @@ The driver uses `sql_auto_complete()` only when the official `autocomplete` exte
 
 ## Packaging and release
 
-`pnpm package` creates a VSIX without bundling a host-specific DuckDB binary. CI uploads the VSIX produced by the Ubuntu x64 job after all checks in that job pass. Publishing to the VS Code Marketplace and Open VSX remains a manual step; this repository has no workflow that publishes artifacts.
+`pnpm package` creates a VSIX without bundling a host-specific DuckDB binary. CI uploads the VSIX after the complete platform matrix passes.
 
-Before a 2.0 release, install the CI artifact on each supported platform, connect SQLTools to a temporary database, run `SELECT 1`, browse a table and view, disconnect, and confirm the file can be reopened by another process.
+GitHub releases are created with the manual **Release** workflow on `main`. Select a patch, minor, or major bump. The workflow commits the version, reruns the complete platform matrix, packages and verifies the VSIX, attaches it and its SHA-256 checksum to a draft, then publishes the release and tag. A failed run leaves the draft in place and can be resumed by dispatching the same bump again.
+
+The release job uses the protected `release` environment and its repository-scoped `RELEASE_TOKEN`. It does not publish to the Visual Studio Marketplace or Open VSX.
+
+Before approving a release, install the CI artifact on each supported platform, connect SQLTools to a temporary database, run `SELECT 1`, browse a table and view, disconnect, and confirm the file can be reopened by another process.
 
 See the [VS Code extension publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) and the [SQLTools driver source](https://github.com/mtxr/vscode-sqltools) for the host contracts.
