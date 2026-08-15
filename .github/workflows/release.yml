@@ -323,3 +323,59 @@ jobs:
           grep -Fxq "$VSIX_NAME.sha256" <<< "$asset_names"
 
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+  publish-marketplaces:
+    name: Publish to marketplaces
+    needs: [version, package, publish]
+    environment:
+      name: release
+      deployment: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download release candidate
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: release-candidate-${{ needs.version.outputs.version }}
+          path: release-candidate
+
+      - name: Verify release candidate checksum
+        working-directory: release-candidate
+        run: sha256sum --check "${{ needs.package.outputs.vsix_name }}.sha256"
+
+      - name: Log in to Azure via OIDC
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Report marketplace identity
+        # The VSSPS profile id printed here is what the Marketplace publisher
+        # membership is keyed on, not the Entra client id.
+        run: |
+          az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id -o tsv
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSIX_NAME: ${{ needs.package.outputs.vsix_name }}
+        run: |
+          npx @vscode/vsce@3.9.2 publish \
+            --packagePath "release-candidate/$VSIX_NAME" \
+            --allow-star-activation --azure-credential --skip-duplicate
+
+      - name: Publish to Open VSX
+        if: ${{ !cancelled() }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          VSIX_NAME: ${{ needs.package.outputs.vsix_name }}
+        run: npx ovsx@1.1.1 publish "release-candidate/$VSIX_NAME"
