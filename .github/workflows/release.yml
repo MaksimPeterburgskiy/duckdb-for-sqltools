@@ -245,7 +245,7 @@ jobs:
 
   publish:
     name: Publish GitHub release
-    needs: [version, package]
+    needs: [version, package, publish-marketplaces]
     environment:
       name: release
       deployment: false
@@ -326,7 +326,11 @@ jobs:
 
   publish-marketplaces:
     name: Publish to marketplaces
-    needs: [version, package, publish]
+    # Runs before the GitHub release is undrafted: if a marketplace publish
+    # fails, the draft stays in place and dispatching the same bump resumes
+    # the release. Both publish steps skip versions that already exist, so
+    # the resume run is idempotent.
+    needs: [version, package]
     environment:
       name: release
       deployment: false
@@ -395,4 +399,4 @@ jobs:
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
           VSIX_NAME: ${{ needs.package.outputs.vsix_name }}
-        run: pnpm exec ovsx publish "release-candidate/$VSIX_NAME"
+        run: pnpm exec ovsx publish "release-candidate/$VSIX_NAME" --skip-duplicate
