@@ -90,7 +90,9 @@ The driver uses `sql_auto_complete()` only when the official `autocomplete` exte
 
 GitHub releases are created with the manual **Release** workflow on `main`. Select a patch, minor, or major bump. The workflow commits the version bump together with a generated `CHANGELOG.md` section, reruns the complete platform matrix, packages and verifies the VSIX, attaches it and its SHA-256 checksum to a draft, then publishes the release and tag. A failed run leaves the draft in place and can be resumed by dispatching the same bump again.
 
-The release job uses the protected `release` environment and its repository-scoped `RELEASE_TOKEN`. It does not publish to the Visual Studio Marketplace or Open VSX.
+The release jobs use the protected `release` environment. It must provide the repository-scoped `RELEASE_TOKEN` secret, the `OVSX_PAT` secret (an [Open VSX access token](https://open-vsx.org/user-settings/tokens) for the `MaksimPeterburgskiy` namespace), and the `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` variables of an Azure user-assigned managed identity.
+
+After the GitHub release is published, the `publish-marketplaces` job publishes the same checksum-verified VSIX to the Visual Studio Marketplace and Open VSX. Marketplace authentication uses Entra ID workload identity federation instead of a PAT: the managed identity has a federated credential trusting this repository's `release` environment, and its Azure DevOps profile id (printed by the `Report marketplace identity` step) must be a Contributor member of the `MaksimPeterburgskiy` publisher. Open VSX publishing requires the signed Eclipse Foundation Open VSX Publisher Agreement on the account that owns the token.
 
 Before approving a release, install the CI artifact on each supported platform, connect SQLTools to a temporary database, run `SELECT 1`, browse a table and view, disconnect, and confirm the file can be reopened by another process.
 
