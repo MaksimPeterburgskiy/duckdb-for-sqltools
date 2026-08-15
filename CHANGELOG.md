@@ -2,6 +2,10 @@
 
 Release notes for each published version also appear on [GitHub Releases](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases).
 
+## Unreleased
+
+- Security: stopped returning resolved MotherDuck tokens through the public `resolveConnection` extension API, where any installed VS Code extension could read them. Tokens are now delivered privately to the driver inside the SQLTools language server, and are only resolved for MotherDuck connections that actually exist in the user's saved SQLTools connections.
+
 ## 2.0.0
 
 - Replaced `duckdb-async` with `@duckdb/node-api@1.5.5-r.4`, backed by DuckDB 1.5.5.

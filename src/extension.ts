@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { IExtension, IExtensionPlugin, IDriverExtensionApi } from '@sqltools/types';
+import { IExtension, IExtensionPlugin, IDriverExtensionApi, ILanguageClient } from '@sqltools/types';
 import { ExtensionContext } from 'vscode';
 import { DRIVER_ALIASES } from './constants';
 import {
+  DuckDBConnectionInfo,
   isMotherDuckConnection,
   parseBeforeEditConnection,
   parseBeforeSaveConnection,
@@ -13,6 +14,7 @@ import {
   DUCKDB_EXTENSION_CONFLICT_MESSAGE,
   hasConflictingDuckDBExtension,
 } from './extension-conflict';
+import { motherDuckTokenKey, SET_MOTHERDUCK_TOKEN_REQUEST } from './motherduck-credentials';
 const { publisher, name, displayName } = require('../package.json');
 
 const AUTHENTICATION_PROVIDER = 'sqltools-driver-credentials';
@@ -25,6 +27,24 @@ function getWorkspaceContext() {
       fsPath: folder.uri.fsPath,
     })),
   };
+}
+
+// The exported API is callable by any installed extension, so token resolution
+// is limited to connections the user actually saved in SQLTools settings.
+function isSavedMotherDuckConnection(resolved: DuckDBConnectionInfo): boolean {
+  const configs = [
+    vscode.workspace.getConfiguration('sqltools'),
+    ...(vscode.workspace.workspaceFolders ?? []).map(folder =>
+      vscode.workspace.getConfiguration('sqltools', folder.uri)),
+  ];
+  return configs.some(config =>
+    (config.get<DuckDBConnectionInfo[]>('connections') ?? []).some(saved =>
+      !!saved
+      && DRIVER_ALIASES.some(({ value }) => value === saved.driver)
+      && saved.name === resolved.name
+      && isMotherDuckConnection(saved)
+      && (saved.database ?? saved.databaseFilePath) === (resolved.database ?? resolved.databaseFilePath)),
+  );
 }
 
 export async function activate(extContext: ExtensionContext): Promise<IDriverExtensionApi> {
@@ -50,6 +70,11 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
 
   const api = sqltools.exports;
 
+  let resolveLanguageClient!: (client: ILanguageClient) => void;
+  const languageClient = new Promise<ILanguageClient>(resolve => {
+    resolveLanguageClient = resolve;
+  });
+
   const extensionId = `${publisher}.${name}`;
   const plugin: IExtensionPlugin = {
     extensionId,
@@ -70,6 +95,7 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
         extension.resourcesMap().set(`driver/${value}/ui-schema`, extContext.asAbsolutePath('ui.schema.json'));
       });
       await extension.client.sendRequest('ls/RegisterPlugin', { path: extContext.asAbsolutePath('out/ls/plugin.js') });
+      resolveLanguageClient(extension.client);
     },
   };
   api.registerPlugin(plugin);
@@ -81,13 +107,28 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
       parseBeforeEditConnection({ connInfo }, getWorkspaceContext()),
     resolveConnection: async ({ connInfo }) => {
       const resolved = resolveConnectionPaths(connInfo, getWorkspaceContext());
-      if (isMotherDuckConnection(resolved) && resolved.password === undefined && !resolved.askForPassword) {
+      if (
+        isMotherDuckConnection(resolved)
+        && resolved.password === undefined
+        && !resolved.askForPassword
+        && isSavedMotherDuckConnection(resolved)
+      ) {
         const scopes = [resolved.name ?? 'DuckDB', MOTHERDUCK_CREDENTIAL_SCOPE];
         let session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { silent: true });
         if (!session) {
           session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { createIfNone: true });
         }
-        if (session) resolved.password = session.accessToken;
+        if (session) {
+          // Hand the token to our driver inside the SQLTools language server
+          // instead of returning it here: this API is reachable by every
+          // installed extension, and a returned password would let any of
+          // them read the MotherDuck token.
+          const client = await languageClient;
+          await client.sendRequest(SET_MOTHERDUCK_TOKEN_REQUEST, {
+            key: motherDuckTokenKey(resolved.name, resolved.database ?? resolved.databaseFilePath),
+            token: session.accessToken,
+          });
+        }
       }
       return resolved;
     },
