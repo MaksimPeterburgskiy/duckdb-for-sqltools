@@ -13,8 +13,6 @@ import type {
   DuckDBResultReader,
 } from '@duckdb/node-api';
 import keywordsCompletion from './keywords';
-import { motherDuckTokenKey } from '../motherduck-credentials';
-import { getMotherDuckToken } from './motherduck-token-store';
 import queries from './queries';
 import { qualifiedName } from './sql';
 import { devDependencies } from '../../package.json';
@@ -185,11 +183,8 @@ export default class DuckDBDriver
       options.access_mode = 'AUTOMATIC';
     }
 
-    if (this.configuredDatabase.startsWith('md:')) {
-      const token = this.credentials.password ?? getMotherDuckToken(
-        motherDuckTokenKey(this.credentials.name, this.credentials.database ?? this.credentials.databaseFilePath),
-      );
-      if (token) options.motherduck_token = token;
+    if (this.configuredDatabase.startsWith('md:') && this.credentials.password) {
+      options.motherduck_token = this.credentials.password;
     }
 
     return options;

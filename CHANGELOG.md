@@ -4,7 +4,7 @@ Release notes for each published version also appear on [GitHub Releases](https:
 
 ## Unreleased
 
-- Security: stopped returning resolved MotherDuck tokens through the public `resolveConnection` extension API, where any installed VS Code extension could read them. Tokens are now delivered privately to the driver inside the SQLTools language server, and are only resolved for MotherDuck connections that actually exist in the user's saved SQLTools connections.
+- Security: stopped resolving MotherDuck credentials through the public `resolveConnection` extension API. Ask on connect is now the default, and existing credential-backed profiles prompt for a token instead of returning one to the API caller.
 
 ## 2.0.0
 
