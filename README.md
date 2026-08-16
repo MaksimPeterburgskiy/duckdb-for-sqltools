@@ -7,7 +7,7 @@
 **Query and explore DuckDB and MotherDuck databases without leaving VS Code.**
 
 [![CI](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml/badge.svg)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml)
-[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/MaksimPeterburgskiy.duckdb-for-sqltools?label=VS%20Marketplace&color=fff100&labelColor=444)](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools)
+[![VS Marketplace](https://vsmarketplacebadges.dev/version/MaksimPeterburgskiy.duckdb-for-sqltools.svg?label=VS%20Marketplace&color=fff100&labelColor=444)](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools)
 [![Open VSX](https://img.shields.io/open-vsx/v/MaksimPeterburgskiy/duckdb-for-sqltools?label=Open%20VSX&color=fff100&labelColor=444)](https://open-vsx.org/extension/MaksimPeterburgskiy/duckdb-for-sqltools)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
