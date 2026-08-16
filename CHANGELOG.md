@@ -2,6 +2,11 @@
 
 Release notes for each published version also appear on [GitHub Releases](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases).
 
+## 2.0.2
+
+- Point install instructions at the marketplace listings (#7)
+- Stop exposing MotherDuck tokens through resolveConnection (#5)
+
 ## Unreleased
 
 - Security: stopped resolving MotherDuck credentials through the public `resolveConnection` extension API. Ask on connect is now the default, and existing credential-backed profiles prompt for a token instead of returning one to the API caller.
