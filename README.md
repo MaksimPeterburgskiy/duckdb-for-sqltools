@@ -7,7 +7,8 @@
 **Query and explore DuckDB and MotherDuck databases without leaving VS Code.**
 
 [![CI](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml/badge.svg)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/MaksimPeterburgskiy/duckdb-for-sqltools?label=download&color=fff100&labelColor=444)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest)
+[![VS Marketplace](https://vsmarketplacebadges.dev/version/MaksimPeterburgskiy.duckdb-for-sqltools.svg?label=VS%20Marketplace&color=fff100&labelColor=444)](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools)
+[![Open VSX](https://img.shields.io/open-vsx/v/MaksimPeterburgskiy/duckdb-for-sqltools?label=Open%20VSX&color=fff100&labelColor=444)](https://open-vsx.org/extension/MaksimPeterburgskiy/duckdb-for-sqltools)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) driver for [DuckDB](https://duckdb.org/), built on the official [DuckDB Node API](https://duckdb.org/docs/stable/clients/node_neo/overview).
@@ -25,15 +26,15 @@ A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) 
 
 ## Install
 
-1. Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) from the marketplace.
-2. Download the VSIX from the [latest release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest).
-3. Install it with **Extensions: Install from VSIX...** in VS Code, or from a terminal:
+Search for **DuckDB for SQLTools** in the Extensions view, install it from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools) or [Open VSX](https://open-vsx.org/extension/MaksimPeterburgskiy/duckdb-for-sqltools) (VSCodium, Cursor, and other forks), or install from a terminal:
 
 ```sh
-code --install-extension duckdb-for-sqltools-<version>.vsix
+code --install-extension MaksimPeterburgskiy.duckdb-for-sqltools
 ```
 
-Then open the SQLTools sidebar, choose **Add New Connection**, and select **DuckDB**.
+[SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) is installed automatically as a dependency. Then open the SQLTools sidebar, choose **Add New Connection**, and select **DuckDB**.
+
+To install a specific build instead, download the VSIX from a [GitHub release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest) and use **Extensions: Install from VSIX...**.
 
 > **Requirements:** VS Code 1.87 or newer. The extension installs the matching native DuckDB package for your platform on first connect.
 
@@ -146,7 +147,7 @@ pnpm install --frozen-lockfile
 | `pnpm compile` | Bundle the extension entry points |
 | `pnpm package` | Build a VSIX |
 
-CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers publish tested artifacts through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md).
+CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers release through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md), which publishes the verified VSIX to GitHub Releases, the Visual Studio Marketplace, and Open VSX.
 
 ## License
 
