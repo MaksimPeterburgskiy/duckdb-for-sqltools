@@ -6,6 +6,11 @@ Release notes for each published version also appear on [GitHub Releases](https:
 
 - Security: stopped resolving MotherDuck credentials through the public `resolveConnection` extension API. Ask on connect is now the default, and existing credential-backed profiles prompt for a token instead of returning one to the API caller.
 
+## 2.0.1
+
+- Publish releases to VS Code Marketplace and Open VSX (#6)
+- Clean up public-facing docs and repo assets (#4)
+
 ## 2.0.0
 
 - Replaced `duckdb-async` with `@duckdb/node-api@1.5.5-r.4`, backed by DuckDB 1.5.5.

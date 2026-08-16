@@ -2,7 +2,7 @@
   "name": "duckdb-for-sqltools",
   "displayName": "DuckDB for SQLTools",
   "description": "Query and explore DuckDB databases in VS Code with SQLTools",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "packageManager": "pnpm@11.21.0",
   "engines": {
     "vscode": "^1.87.0",
@@ -58,6 +58,7 @@
     "@types/node": "22.20.1",
     "@types/vscode": "1.87.0",
     "@vscode/vsce": "3.9.2",
+    "ovsx": "1.1.1",
     "rimraf": "6.1.3",
     "tsup": "8.5.1",
     "typescript": "7.0.2",
