@@ -2,6 +2,10 @@
 
 Release notes for each published version also appear on [GitHub Releases](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases).
 
+## Unreleased
+
+- Security: stopped resolving MotherDuck credentials through the public `resolveConnection` extension API. Ask on connect is now the default, and existing credential-backed profiles prompt for a token instead of returning one to the API caller.
+
 ## 2.0.1
 
 - Publish releases to VS Code Marketplace and Open VSX (#6)

@@ -78,7 +78,7 @@ CI runs these checks on Ubuntu x64, Ubuntu arm64, Windows x64, and macOS arm64. 
 
 ## Connection changes
 
-The canonical saved target is `database`. Keep reading `databaseFilePath` so connections from pre-2.0 releases continue to work. Do not persist a MotherDuck token in a database URI. Use the SQLTools credential resolver or ask for the token when connecting.
+The canonical saved target is `database`. Keep reading `databaseFilePath` so connections from pre-2.0 releases continue to work. Do not persist a MotherDuck token in a database URI. Ask for the token when connecting unless the user explicitly chooses plaintext storage.
 
 DuckDB options that restrict extensions or external access must be applied while creating the instance. Security settings cannot always be loosened after the instance starts. Tests that share the same cached database path must therefore use compatible instance options or close the prior instance first.
 

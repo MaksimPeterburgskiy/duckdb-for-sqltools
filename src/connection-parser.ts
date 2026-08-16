@@ -176,16 +176,13 @@ export function parseBeforeSaveConnection<T extends DuckDBConnectionInfo>(
   }
 
   if (method === CONNECTION_METHODS.motherDuck) {
-    if (saved.useToken === TOKEN_MODES.ask) {
-      saved.askForPassword = true;
-      delete saved.password;
-    } else if (saved.useToken === TOKEN_MODES.plaintext) {
+    if (saved.useToken === TOKEN_MODES.plaintext) {
       saved.askForPassword = false;
       if (typeof saved.password !== 'string' || saved.password.length === 0) {
         throw new Error('MotherDuck token is required when saving it in settings.');
       }
     } else {
-      delete saved.askForPassword;
+      saved.askForPassword = true;
       delete saved.password;
     }
   } else {
@@ -224,9 +221,11 @@ export function parseBeforeEditConnection<T extends DuckDBConnectionInfo>(
   } else if (formData.connectionMethod === CONNECTION_METHODS.motherDuck && typeof storedDatabase === 'string') {
     assertNoMotherDuckToken(storedDatabase);
     formData.motherDuckDatabase = storedDatabase.slice(3);
-    if (formData.askForPassword) formData.useToken = TOKEN_MODES.ask;
-    else if (typeof formData.password === 'string' && formData.password.length > 0) formData.useToken = TOKEN_MODES.plaintext;
-    else formData.useToken = TOKEN_MODES.credentials;
+    if (typeof formData.password === 'string' && formData.password.length > 0) {
+      formData.useToken = TOKEN_MODES.plaintext;
+    } else {
+      formData.useToken = TOKEN_MODES.ask;
+    }
   } else if (formData.connectionMethod === CONNECTION_METHODS.advancedUri && typeof storedDatabase === 'string') {
     assertNoMotherDuckToken(storedDatabase);
     formData.databaseUri = storedDatabase;
