@@ -12,11 +12,10 @@
       "title": "Token storage",
       "type": "string",
       "enum": [
-        "SQLTools Driver Credentials",
         "Ask on connect",
         "Save as plaintext in settings"
       ],
-      "default": "SQLTools Driver Credentials"
+      "default": "Ask on connect"
     },
     "motherDuckToken": {
       "title": "MotherDuck token",
@@ -168,13 +167,6 @@
     },
     "useToken": {
       "oneOf": [
-        {
-          "properties": {
-            "useToken": {
-              "enum": ["SQLTools Driver Credentials"]
-            }
-          }
-        },
         {
           "properties": {
             "useToken": {

@@ -67,7 +67,7 @@ The connection assistant offers four modes:
 
 - **Local File** opens a `.duckdb` file. Files inside a VS Code workspace are stored as workspace-relative paths so the connection can move with the project.
 - **In-Memory** opens a temporary `:memory:` database. In-memory connections are always writable and disappear when disconnected.
-- **MotherDuck** opens `md:` or `md:<database>`. Supply a MotherDuck service token through SQLTools Driver Credentials, choose **Ask on connect**, or explicitly opt into storing it as plaintext.
+- **MotherDuck** opens `md:` or `md:<database>`. The default **Ask on connect** mode prompts for a MotherDuck service token each time it is needed. You can explicitly opt into storing it as plaintext.
 - **Advanced URI** accepts any other DuckDB-supported database path or URI.
 
 Existing connections that use `databaseFilePath` are migrated to the `database` setting when edited or saved.
@@ -84,7 +84,7 @@ Within one SQLTools process, DuckDB caches file-backed instances by path. Discon
 
 ### MotherDuck credentials
 
-The default token mode uses SQLTools' credential prompt and optional keychain storage, then passes the token to DuckDB only while connecting. **Ask on connect** keeps it out of saved settings entirely. The extension rejects a `motherduck_token` embedded in a URI because SQLTools connection settings may be written to user or workspace JSON.
+The default **Ask on connect** mode keeps the token out of saved settings. The plaintext option is available for unattended connections, but stores the token in SQLTools user or workspace JSON. The extension rejects a `motherduck_token` embedded in a URI.
 
 Create and manage tokens using the [MotherDuck authentication guide](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/).
 
@@ -125,7 +125,7 @@ For connections that execute untrusted SQL, consider disabling extension auto-in
 
 - **The database is locked:** disconnect the process that has read/write access, or use Read Only when you only need to inspect the file.
 - **A read-only connection rejects a statement:** explorer queries work in read-only mode, but DDL, DML, `ATTACH` without a compatible mode, and some extension operations require write access.
-- **MotherDuck authentication fails:** edit the connection and refresh its SQLTools Driver Credential, or select Ask on connect. Do not add the token to the `md:` URI.
+- **MotherDuck authentication fails:** reconnect and enter a current token, or edit the connection to replace its plaintext token. Do not add the token to the `md:` URI.
 - **An extension or file function is blocked:** check `enable_external_access`, `autoinstall_known_extensions`, `autoload_known_extensions`, and `allow_community_extensions`. A restrictive setting must be changed by recreating the connection.
 - **The native package does not load:** open the SQLTools output channel and [file an issue](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues) with the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error.
 

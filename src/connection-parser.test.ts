@@ -102,7 +102,7 @@ describe('parseBeforeSaveConnection', () => {
     expect(result.askForPassword).toBeUndefined();
   });
 
-  it('uses SQLTools Driver Credentials for MotherDuck by default', () => {
+  it('migrates SQLTools Driver Credentials to ask on connect', () => {
     const result = parseBeforeSaveConnection({
       connInfo: {
         connectionMethod: CONNECTION_METHODS.motherDuck,
@@ -114,7 +114,7 @@ describe('parseBeforeSaveConnection', () => {
 
     expect(result.database).toBe('md:analytics');
     expect(result.password).toBeUndefined();
-    expect(result.askForPassword).toBeUndefined();
+    expect(result.askForPassword).toBe(true);
   });
 
   it('sets askForPassword for an ask-on-connect MotherDuck token', () => {
@@ -199,6 +199,14 @@ describe('parseBeforeEditConnection', () => {
 
     expect(result.connectionMethod).toBe(CONNECTION_METHODS.motherDuck);
     expect(result.motherDuckDatabase).toBe('analytics');
+    expect(result.useToken).toBe(TOKEN_MODES.ask);
+  });
+
+  it('opens legacy credential-backed connections as ask on connect', () => {
+    const result = parseBeforeEditConnection({
+      connInfo: { database: 'md:analytics' },
+    });
+
     expect(result.useToken).toBe(TOKEN_MODES.ask);
   });
 
