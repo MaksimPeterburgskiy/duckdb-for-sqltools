@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: SQLTools questions
+    url: https://github.com/mtxr/vscode-sqltools/issues
+    about: Problems with SQLTools itself (not this driver) belong in the SQLTools repository.
+  - name: DuckDB documentation
+    url: https://duckdb.org/docs/
+    about: Questions about DuckDB SQL syntax, extensions, or behavior are covered by the DuckDB docs.

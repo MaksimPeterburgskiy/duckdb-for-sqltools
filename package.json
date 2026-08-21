@@ -17,6 +17,7 @@
   "bugs": {
     "url": "https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues"
   },
+  "qna": "https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues",
   "icon": "icons/duckdb-logo.png",
   "scripts": {
     "clean": "rimraf out dist coverage *.vsix",

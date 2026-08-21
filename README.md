@@ -18,6 +18,7 @@ A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) 
 [Connections](#connection-targets) ·
 [Security](#duckdb-extensions-and-security) ·
 [Troubleshooting](#troubleshooting) ·
+[Report a Bug](#feedback-and-bug-reports) ·
 [Development](#development)
 
 </div>
@@ -129,6 +130,10 @@ For connections that execute untrusted SQL, consider disabling extension auto-in
 - **MotherDuck authentication fails:** reconnect and enter a current token, or edit the connection to replace its plaintext token. Do not add the token to the `md:` URI.
 - **An extension or file function is blocked:** check `enable_external_access`, `autoinstall_known_extensions`, `autoload_known_extensions`, and `allow_community_extensions`. A restrictive setting must be changed by recreating the connection.
 - **The native package does not load:** open the SQLTools output channel and [file an issue](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues) with the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error.
+
+## Feedback and bug reports
+
+Found a bug or have an idea? [Open an issue](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues/new/choose) — there are templates for bug reports and feature requests. For bugs, please include your OS, VS Code version, SQLTools and driver versions, and any relevant output from the SQLTools channel in VS Code's Output panel (with tokens and other secrets removed).
 
 ## Development
 
