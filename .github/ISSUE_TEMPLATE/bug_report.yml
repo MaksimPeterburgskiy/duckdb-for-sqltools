@@ -1,0 +1,77 @@
+name: Bug report
+description: Report a problem with the DuckDB for SQLTools extension
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The details below help reproduce and fix it quickly.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including any error messages.
+      placeholder: When I run a query against a local .duckdb file, the results grid shows...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to trigger the problem. Include the SQL statement if relevant.
+      placeholder: |
+        1. Add a new DuckDB connection with mode "Local File"
+        2. Connect and run `SELECT ...`
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen instead.
+    validations:
+      required: false
+  - type: dropdown
+    id: connection-mode
+    attributes:
+      label: Connection mode
+      description: Which connection mode does this happen with?
+      multiple: true
+      options:
+        - Local File
+        - In-Memory
+        - MotherDuck
+        - Advanced URI
+        - Not connection-related / not sure
+    validations:
+      required: false
+  - type: textarea
+    id: versions
+    attributes:
+      label: Environment
+      description: Versions and platform details. Find extension versions in the VS Code Extensions view.
+      value: |
+        - OS and architecture (e.g. macOS 15 arm64, Windows 11 x64):
+        - VS Code version:
+        - SQLTools extension version:
+        - DuckDB for SQLTools version:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: SQLTools output / logs
+      description: |
+        Open the Output panel in VS Code, select the SQLTools channel, and paste anything relevant. This is automatically formatted as code, no backticks needed. Remove tokens or other secrets before posting.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that might help — advanced connection settings, initialization SQL, extensions loaded, screenshots.
+    validations:
+      required: false
