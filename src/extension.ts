@@ -15,9 +15,6 @@ import {
 } from './extension-conflict';
 const { publisher, name, displayName } = require('../package.json');
 
-const AUTHENTICATION_PROVIDER = 'sqltools-driver-credentials';
-const MOTHERDUCK_CREDENTIAL_SCOPE = 'MotherDuck token';
-
 function getWorkspaceContext() {
   return {
     workspaceFolders: vscode.workspace.workspaceFolders?.map(folder => ({
@@ -79,15 +76,13 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
       parseBeforeSaveConnection({ connInfo }, getWorkspaceContext()),
     parseBeforeEditConnection: ({ connInfo }) =>
       parseBeforeEditConnection({ connInfo }, getWorkspaceContext()),
-    resolveConnection: async ({ connInfo }) => {
+    resolveConnection: ({ connInfo }) => {
       const resolved = resolveConnectionPaths(connInfo, getWorkspaceContext());
-      if (isMotherDuckConnection(resolved) && resolved.password === undefined && !resolved.askForPassword) {
-        const scopes = [resolved.name ?? 'DuckDB', MOTHERDUCK_CREDENTIAL_SCOPE];
-        let session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { silent: true });
-        if (!session) {
-          session = await vscode.authentication.getSession(AUTHENTICATION_PROVIDER, scopes, { createIfNone: true });
-        }
-        if (session) resolved.password = session.accessToken;
+      if (isMotherDuckConnection(resolved) && resolved.password === undefined) {
+        // The returned API is public to every installed extension. Ask SQLTools
+        // for the token during its normal connection flow instead of resolving
+        // a credential here and exposing it to the caller.
+        resolved.askForPassword = true;
       }
       return resolved;
     },

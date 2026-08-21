@@ -7,7 +7,8 @@
 **Query and explore DuckDB and MotherDuck databases without leaving VS Code.**
 
 [![CI](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml/badge.svg)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/MaksimPeterburgskiy/duckdb-for-sqltools?label=download&color=fff100&labelColor=444)](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest)
+[![VS Marketplace](https://vsmarketplacebadges.dev/version/MaksimPeterburgskiy.duckdb-for-sqltools.svg?label=VS%20Marketplace&color=fff100&labelColor=444)](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools)
+[![Open VSX](https://img.shields.io/open-vsx/v/MaksimPeterburgskiy/duckdb-for-sqltools?label=Open%20VSX&color=fff100&labelColor=444)](https://open-vsx.org/extension/MaksimPeterburgskiy/duckdb-for-sqltools)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) driver for [DuckDB](https://duckdb.org/), built on the official [DuckDB Node API](https://duckdb.org/docs/stable/clients/node_neo/overview).
@@ -26,15 +27,15 @@ A [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) 
 
 ## Install
 
-1. Install [SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) from the marketplace.
-2. Download the VSIX from the [latest release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest).
-3. Install it with **Extensions: Install from VSIX...** in VS Code, or from a terminal:
+Search for **DuckDB for SQLTools** in the Extensions view, install it from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=MaksimPeterburgskiy.duckdb-for-sqltools) or [Open VSX](https://open-vsx.org/extension/MaksimPeterburgskiy/duckdb-for-sqltools) (VSCodium, Cursor, and other forks), or install from a terminal:
 
 ```sh
-code --install-extension duckdb-for-sqltools-<version>.vsix
+code --install-extension MaksimPeterburgskiy.duckdb-for-sqltools
 ```
 
-Then open the SQLTools sidebar, choose **Add New Connection**, and select **DuckDB**.
+[SQLTools](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools) is installed automatically as a dependency. Then open the SQLTools sidebar, choose **Add New Connection**, and select **DuckDB**.
+
+To install a specific build instead, download the VSIX from a [GitHub release](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases/latest) and use **Extensions: Install from VSIX...**.
 
 > **Requirements:** VS Code 1.87 or newer. The extension installs the matching native DuckDB package for your platform on first connect.
 
@@ -68,7 +69,7 @@ The connection assistant offers four modes:
 
 - **Local File** opens a `.duckdb` file. Files inside a VS Code workspace are stored as workspace-relative paths so the connection can move with the project.
 - **In-Memory** opens a temporary `:memory:` database. In-memory connections are always writable and disappear when disconnected.
-- **MotherDuck** opens `md:` or `md:<database>`. Supply a MotherDuck service token through SQLTools Driver Credentials, choose **Ask on connect**, or explicitly opt into storing it as plaintext.
+- **MotherDuck** opens `md:` or `md:<database>`. The default **Ask on connect** mode prompts for a MotherDuck service token each time it is needed. You can explicitly opt into storing it as plaintext.
 - **Advanced URI** accepts any other DuckDB-supported database path or URI.
 
 Existing connections that use `databaseFilePath` are migrated to the `database` setting when edited or saved.
@@ -85,7 +86,7 @@ Within one SQLTools process, DuckDB caches file-backed instances by path. Discon
 
 ### MotherDuck credentials
 
-The default token mode uses SQLTools' credential prompt and optional keychain storage, then passes the token to DuckDB only while connecting. **Ask on connect** keeps it out of saved settings entirely. The extension rejects a `motherduck_token` embedded in a URI because SQLTools connection settings may be written to user or workspace JSON.
+The default **Ask on connect** mode keeps the token out of saved settings. The plaintext option is available for unattended connections, but stores the token in SQLTools user or workspace JSON. The extension rejects a `motherduck_token` embedded in a URI.
 
 Create and manage tokens using the [MotherDuck authentication guide](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/).
 
@@ -126,7 +127,7 @@ For connections that execute untrusted SQL, consider disabling extension auto-in
 
 - **The database is locked:** disconnect the process that has read/write access, or use Read Only when you only need to inspect the file.
 - **A read-only connection rejects a statement:** explorer queries work in read-only mode, but DDL, DML, `ATTACH` without a compatible mode, and some extension operations require write access.
-- **MotherDuck authentication fails:** edit the connection and refresh its SQLTools Driver Credential, or select Ask on connect. Do not add the token to the `md:` URI.
+- **MotherDuck authentication fails:** reconnect and enter a current token, or edit the connection to replace its plaintext token. Do not add the token to the `md:` URI.
 - **An extension or file function is blocked:** check `enable_external_access`, `autoinstall_known_extensions`, `autoload_known_extensions`, and `allow_community_extensions`. A restrictive setting must be changed by recreating the connection.
 - **The native package does not load:** open the SQLTools output channel and [file an issue](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/issues) with the reported operating system, architecture, Node version, SQLTools version, driver version, and full dependency-install error.
 
@@ -151,7 +152,7 @@ pnpm install --frozen-lockfile
 | `pnpm compile` | Bundle the extension entry points |
 | `pnpm package` | Build a VSIX |
 
-CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers publish tested artifacts through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md).
+CI builds and tests the native DuckDB integration on Ubuntu x64, Ubuntu arm64, Windows x64, and Apple Silicon before producing a VSIX artifact. Maintainers release through the manual GitHub Release workflow described in [GETTING_STARTED.md](GETTING_STARTED.md), which publishes the verified VSIX to GitHub Releases, the Visual Studio Marketplace, and Open VSX.
 
 ## License
 
