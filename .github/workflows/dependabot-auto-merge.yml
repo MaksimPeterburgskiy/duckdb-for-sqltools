@@ -50,7 +50,7 @@ jobs:
             version-update:semver-patch|version-update:semver-minor) ;;
             *) reason="update type is '${UPDATE_TYPE:-unknown}'" ;;
           esac
-          if [[ -z "$reason" && ",$DEPENDENCY_NAMES" == *",@duckdb/"* ]]; then
+          if [[ -z "$reason" && "$DEPENDENCY_NAMES" == *"@duckdb/"* ]]; then
             reason="DuckDB updates need manual review"
           fi
           if [[ -z "$reason" && "$MAINTAINER_CHANGES" == "true" ]]; then
