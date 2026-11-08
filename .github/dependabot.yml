@@ -1,4 +1,10 @@
 # yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
+#
+# Version updates wait out a cooldown so freshly published (and possibly
+# compromised) releases have time to be caught and yanked before we adopt
+# them. Security updates skip the cooldown. Patch and minor updates are
+# approved and auto-merged by .github/workflows/dependabot-auto-merge.yml once
+# CI passes; majors and DuckDB updates are left for manual review.
 
 version: 2
 updates:
@@ -6,16 +12,48 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: tuesday
+      time: "06:00"
+      timezone: America/New_York
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 14
+    ignore:
+      # Must stay at or below engines.vscode; bump both together by hand.
+      - dependency-name: "@types/vscode"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # Tracks the Node major in engines.node and CI.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
-      development-dependencies:
-        dependency-type: development
+      duckdb:
+        patterns:
+          - "@duckdb/*"
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@duckdb/*"
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
+        update-types: [minor, patch]
         patterns:
           - "*"

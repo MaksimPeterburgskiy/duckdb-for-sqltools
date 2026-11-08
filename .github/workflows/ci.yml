@@ -30,7 +30,7 @@ jobs:
           - name: Windows x64
             os: windows-2025
           - name: macOS arm64
-            os: macos-14
+            os: macos-15
 
     steps:
       - name: Check out repository
@@ -111,21 +111,44 @@ jobs:
           if-no-files-found: error
           archive: false
 
+  dependency-review:
+    name: Dependency review
+    # Blocks PRs that add or update dependencies with known vulnerabilities.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          # Everything here is a devDependency, and the bundled ones ship in
+          # the VSIX, so development scope counts too.
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+
   gate:
     name: CI gate
     if: always()
-    needs: [verify, package]
+    needs: [verify, package, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       VERIFY_RESULT: ${{ needs.verify.result }}
       PACKAGE_RESULT: ${{ needs.package.result }}
+      DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
+      IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
     steps:
-      - name: Require successful verification and packaging
+      - name: Require successful verification, packaging and dependency review
         shell: bash
         run: |
-          if [[ "$VERIFY_RESULT" != "success" || "$PACKAGE_RESULT" != "success" ]]; then
+          expected_review="success"
+          if [[ "$IS_PULL_REQUEST" != "true" ]]; then
+            expected_review="skipped"
+          fi
+          if [[ "$VERIFY_RESULT" != "success" || "$PACKAGE_RESULT" != "success" || "$DEPENDENCY_REVIEW_RESULT" != "$expected_review" ]]; then
             echo "Verification result: $VERIFY_RESULT"
             echo "Packaging result: $PACKAGE_RESULT"
+            echo "Dependency review result: $DEPENDENCY_REVIEW_RESULT (expected $expected_review)"
             exit 1
           fi

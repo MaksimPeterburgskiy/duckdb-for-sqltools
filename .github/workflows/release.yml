@@ -140,7 +140,7 @@ jobs:
           - name: Windows x64
             os: windows-2025
           - name: macOS arm64
-            os: macos-14
+            os: macos-15
     steps:
       - name: Check out release commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
