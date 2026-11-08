@@ -7,7 +7,7 @@ DuckDB is a native dependency. SQLTools installs the exact `@duckdb/node-api` ve
 ## Requirements
 
 - VS Code 1.87 or newer
-- Node.js 22
+- Node.js 22.18 or newer
 - Corepack and the pnpm version declared in `package.json`
 - SQLTools installed in the VS Code profile used for extension debugging
 
