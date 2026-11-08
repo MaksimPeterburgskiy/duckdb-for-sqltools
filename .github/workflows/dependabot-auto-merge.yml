@@ -22,8 +22,8 @@ jobs:
   auto-merge:
     name: Approve and enable auto-merge
     # Only PRs opened by Dependabot, compared by account id (dependabot[bot]
-    # is 49699333). fetch-metadata below additionally fails unless the head
-    # commit is a signed Dependabot commit, so a human push opts the PR out.
+    # is 49699333). The first step also requires every commit to be a signed
+    # Dependabot commit, so a human push opts the PR out.
     if: github.event.pull_request.user.id == 49699333
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -31,9 +31,32 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # fetch-metadata v3.1.0 only verifies the first commit, so check that
+      # every commit up to the current head is a signed Dependabot commit.
+      # Any other commit fails the job, which also disables auto-merge below.
+      - name: Verify all commits come from Dependabot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          commits="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/commits" --jq '.[]' | jq -s .)"
+          last_sha="$(jq -r '.[-1].sha' <<< "$commits")"
+          if [[ "$last_sha" != "$HEAD_SHA" ]]; then
+            echo "PR head moved ($last_sha != $HEAD_SHA); a newer run will handle it."
+            exit 1
+          fi
+          untrusted="$(jq -r '.[] | select(.author.id != 49699333 or .commit.verification.verified != true) | .sha' <<< "$commits")"
+          if [[ -n "$untrusted" ]]; then
+            echo "Commits not authored and signed by Dependabot:"
+            echo "$untrusted"
+            exit 1
+          fi
+
       - name: Fetch Dependabot metadata
         id: metadata
-        # Also verifies the commits were authored and signed by Dependabot.
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
       - name: Decide eligibility
