@@ -7,3 +7,10 @@ allowBuilds:
 
 overrides:
   esbuild: 0.28.2
+
+# Supply-chain checks on top of pnpm 11's default 24h minimumReleaseAge.
+# Fail when a recent release has weaker publish provenance than earlier
+# releases of the same package (a common sign of an account takeover). Releases
+# older than 30 days are exempt, since many predate npm provenance.
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 43200

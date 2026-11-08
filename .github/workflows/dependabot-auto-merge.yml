@@ -1,0 +1,94 @@
+name: Dependabot auto-merge
+
+# Approves and enables auto-merge for low-risk Dependabot PRs. The merge
+# itself only happens once the required "CI gate" check passes on an
+# up-to-date branch (main's ruleset), so this never bypasses CI.
+#
+# Auto-merged:  patch and minor updates (version and security updates).
+# Left for review: semver-major updates, @duckdb/* updates, and any update
+# whose release notes report maintainer changes (possible takeover).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: Approve and enable auto-merge
+    # Only PRs opened by Dependabot, compared by account id (dependabot[bot]
+    # is 49699333). fetch-metadata below additionally fails unless the head
+    # commit is a signed Dependabot commit, so a human push opts the PR out.
+    if: github.event.pull_request.user.id == 49699333
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        # Also verifies the commits were authored and signed by Dependabot.
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Decide eligibility
+        id: policy
+        env:
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+          MAINTAINER_CHANGES: ${{ steps.metadata.outputs.maintainer-changes }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          reason=""
+          case "$UPDATE_TYPE" in
+            version-update:semver-patch|version-update:semver-minor) ;;
+            *) reason="update type is '${UPDATE_TYPE:-unknown}'" ;;
+          esac
+          if [[ -z "$reason" && ",$DEPENDENCY_NAMES" == *",@duckdb/"* ]]; then
+            reason="DuckDB updates need manual review"
+          fi
+          if [[ -z "$reason" && "$MAINTAINER_CHANGES" == "true" ]]; then
+            reason="the release notes report maintainer changes"
+          fi
+
+          if [[ -n "$reason" ]]; then
+            echo "Not auto-merging: $reason ($DEPENDENCY_NAMES)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Auto-merging $UPDATE_TYPE: $DEPENDENCY_NAMES." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Approve and enable auto-merge
+        if: steps.policy.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Re-approve on every Dependabot push so the approval covers the
+          # latest commit.
+          gh pr review "$PR_URL" --approve --body "Auto-approved: low-risk Dependabot update. Merges once CI passes."
+          gh pr merge "$PR_URL" --auto --squash
+
+      - name: Disable auto-merge for ineligible or unverified updates
+        # failure() covers fetch-metadata rejecting a non-Dependabot head
+        # commit after auto-merge was already enabled.
+        if: failure() || steps.policy.outputs.eligible == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          auto_merge="$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest != null')"
+          if [[ "$auto_merge" == "true" ]]; then
+            gh pr merge "$PR_URL" --disable-auto
+          fi
