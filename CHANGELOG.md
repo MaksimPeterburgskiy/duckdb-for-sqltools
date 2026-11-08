@@ -2,6 +2,12 @@
 
 Release notes for each published version also appear on [GitHub Releases](https://github.com/MaksimPeterburgskiy/duckdb-for-sqltools/releases).
 
+## 2.0.3
+
+- Update dependencies to latest (DuckDB 1.5.6, vitest 5, tsup 9, vsce 4) (#10)
+- Harden Dependabot and auto-merge low-risk updates (#9)
+- Add issue templates and bug report links (#8)
+
 ## 2.0.2
 
 - Point install instructions at the marketplace listings (#7)
